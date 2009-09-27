@@ -1,0 +1,70 @@
+/*********************************************************/
+/***     KERNEL for DSSP INTERPRETER  III VARIANT      ***/
+/***  -----------------------------------------------  ***/
+/***               DSSP  MEMORY  MAP                   ***/
+/***  -----------------------------------------------  ***/
+/***         started by Burtsev A.A.  23 march 1998    ***/
+/***              last modification   17 may   1998    ***/
+/*********************************************************/
+
+//------------------------------------------------------------
+//  DSSP_MEMORY :
+//
+//  0                 START_CMD          OPSB                CSB
+//  |0|SCA|System Vars|Command Bodies|...|A-stack->...<-C-stack|...
+//
+
+#define START_CMD 1024  // begining of command bodies memory
+#define SIZE_CMD (4096*2-1024-96) // size of command memory (in bytes)
+
+#define START_DATA (9000) // begining of DSSP data
+
+#define    OWNBASE 00   // Base of OWN data
+#define    OPSB 24000   // bottom of operand stack
+#define     CSB 26980   // bottom of control stack
+#define END_MEM 90000   // high limit of DSSP-memory
+
+// start position of pc (Program Counter)
+#define START_PC        (4)
+
+/***---  START CODE AREA (SCA) ---***/
+// 0 - fn_Halt (for safety) so that
+//     zero code will cause stop of DSSP-interpretation
+// 4 - start point for program counter of DSSP-interpreter
+//     Address of main procedure must be placed HERE !!!
+// 8 - cmd_Halt so that to stop DSSP-program
+//     after execution of main DSSP-procedure
+
+/***---  Addresses of SYSTEM VARIABLES in DSSP-MEMORY  ---***/
+
+#define Adr_PUSK (4)    // address of Main Dssp-procedure
+#define Adr_OPSB (12)   // address of OPSB value
+#define Adr_CSB  (16)   // address of CSB  value
+
+#define Adr_OWNBASE (20)// address of OWNBASE value
+#define Adr_WIMAGE (24) // address of WIMAGE
+#define Adr_SWIM (52)   // address of SWIM
+
+#define Adr_TOS   (56)   // address of TOS command
+
+#define Adr_NOIND (60)   // address of NOIND body
+#define Adr_ERSTR (64)   // address of ERSTR body
+
+//registers
+#define REAXA   (70)
+#define REBXA   (74)
+#define RECXA   (78)
+#define REDXA   (82)
+#define RESA    (86)
+#define RDSA    (88)
+#define RFSA    (90)
+#define RGSA    (92)
+#define RCSA    (94)
+#define RSSA    (96)
+#define RESPA   (98)
+#define REFLA   (100)
+#define REDIA   (104)
+#define RESIA   (108)
+#define REBPA   (112)
+
+

@@ -1,0 +1,35 @@
+#!/bin/bash
+
+generate_linux() {
+  echo "Generate..."
+  echo "Target platform Linux"
+  mkdir $1
+  mkdir $1/dssp
+  cp dssp/*.c $1/dssp
+  cp dssp/linux/*.cfg $1/dssp
+  cp dssp/*.cmd $1/dssp
+  cp dssp/*.h?? $1/dssp
+  cp dssp/*.h $1/dssp
+  cp dssp/*.slv $1/dssp
+  cp dssp/*.mmp $1/dssp
+  mkdir $1/gen
+  cp gen/ng.c $1/gen
+  cp gen/*.bat $1/gen
+  cp gen/*.dsp $1/gen
+  cp gen/lite/*.dsp $1/gen
+  echo "Done"
+}
+
+if [ -z $1 ] ; then
+  echo "Use command   './generate [dir] [type]'"
+  echo "[dir]  - target directory"
+  echo "[type] - Linux"
+elif [ -z $2 ] ; then
+  echo "Platform type no given"
+else
+  case $2 in
+    linux) generate_linux "$1" ;;
+    *) echo "'$2' : Wrong type of architecture";   
+  esac
+fi
+

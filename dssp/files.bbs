@@ -1,0 +1,32 @@
+DSSPWIN.C Test program for Win32 API
+MINMAX.C Min & Max for Sun
+RKEY.C Key operation (win32)
+TRAP.C Kernel DSSP: Trap
+WINAPI.C Kernel DSSP: WIN32 API
+Dssp.cmd List of command adresses
+DEBUG.C Kernel DSSP: debug operations
+INITDSSP.C Init DSSP interpretation
+INPUT.C input of DSSP program
+TEST.C Operations for test DSSP
+IO_WIN32.C Kernel DSSP: Operations with screen (win32)
+IO_SUN.C Kernel DSSP: I/O operations (Sun)
+io_dos38.c Kernel DSSP: Operations with screen (386)
+IO_DIR32.C Kernel DSSP: Operations with catalog (win32)
+DSSP.HLD     Main DSSP defenition
+DSSP.H Main DSSP defenitiom
+DSSP.H Main DSSP defenitions
+DSSP.MMP DSSP memory map
+GEN386.BAT Командник для пеpекомпиляции и сбоpки системы
+OTL.DSP Отладчик  ДССП-32
+QND.DSP Просмотр словаря ДССП-32
+DSSP386.EXE DSSP/386
+dssp.cfg Kernel DSSP: configs
+OTLSUN.DSP Отладчик ДССП-32
+MEM.C Phisical Memory OPERATIONS
+TESTINTR.C TEST (BUILT-IN) INTERPRETER
+KERN.C Kernel DSSP: Main interpretation operations
+IO_DIR38.C Kernel DSSP: Operations with catalog (386)
+DATA.C Kernel DSSP: data structure operations
+IO.C Kernel DSSP: I/O operations
+DSSP.HGF Function headers, table, numbers
+DSSP.SLV DSSP voc.

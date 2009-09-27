@@ -1,0 +1,1 @@
+/usr/work/jenny/gcc2.7.2.1/local/H-sun/bin/bt23b-gcc -s -EB -o dssp.obj dssp.c 

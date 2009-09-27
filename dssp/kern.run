@@ -1,0 +1,2 @@
+gcc -O2 -o dssp.out dssp.c -S && ./dssp.out -v
+cp dssp.voc ../gen

@@ -1,0 +1,554 @@
+/*********************************************************/
+/***     KERNEL for DSSP INTERPRETER  III VARIANT      ***/
+/***  -----------------------------------------------  ***/
+/***            SLOVAR (DICTIONARY) TABLE              ***/
+/***  -----------------------------------------------  ***/
+/***         started by Burtsev A.A.  23 march 1998    ***/
+/***              last modification   22 sept  1998    ***/
+/*********************************************************/
+
+#define cmd_    (-1)
+
+ typedef        char    *sptr;  /* pointer to string */
+ typedef        struct  _SLOVO {/* SLOVO - Item of dictionary */
+        int32   cmdAdr ;        /* command body address */
+        FNum    NumFunc;        /* Number of C-function */
+        sptr    pname  ;        /* pointer to command name */
+ } SLOVO, *pSLOVO ;
+
+ SLOVO  SLOVAR [] = {
+
+        /*--- MAIN Interpretation operations ----*/
+        {       cmd_Halt,       fn_Halt,        "HALT"  },
+        {       cmd_Int ,       INTELO,         ""      },
+        {       cmd_K   ,       fn_K,           ";"     },
+        {       cmd_Nop ,       fn_Nop,         "NOP"   },
+        {       cmd_UndefOp,    fn_UndefOp,     ""      },
+
+        /*---     Control operations ----*/
+        {       cmd_Exec,       fn_Exec,    "EXEC"      },
+        {       cmd_If0,        fn_If0 ,        "IF0"   },
+        {       cmd_IfMi,       fn_IfMi,        "IF-"   },
+        {       cmd_IfPl,       fn_IfPl,        "IF+"   },
+        {       cmd_Br0,        fn_Br0 ,        "BR0"   },
+        {       cmd_BrMi,       fn_BrMi,        "BR-"   },
+        {       cmd_BrPl,       fn_BrPl,        "BR+"   },
+        {       cmd_BrS ,       fn_BrS,     "BRS"       },
+        {       cmd_Br  ,       fn_Br,          "BR"    },
+        {       cmd_Else ,      fn_Else,    "ELSE"      },
+        {       cmd_Br1 ,       fn_Br1,     ""          },
+        {       cmd_DW,         fn_DW,          "DW"    },
+        {       cmd_Loop,       fn_Loop ,       "LOOP"  },
+        {       cmd_DOFor,      fn_DOFor,       "DO-"   },
+
+        {       cmd_GetPC,      fn_GetPC ,      "CPC"   },
+        {       cmd_SetPC,      fn_SetPC ,      "!PC"   },
+        {       cmd_GetR,       fn_GetR  ,      "@R"    },
+        {       cmd_SetR,       fn_SetR  ,      "!R"    },
+        {       cmd_GetAdr,     fn_GetAdr,      "''"    },
+        {       cmd_GTP ,       fn_GTP   ,      "GTP"   },
+
+        /*---   LOOPs with TRAPs ( RP DO EX ) ----*/
+        {       cmd_Rp ,        fn_Rp   ,       "RP"    },
+        {       cmd_Do ,        fn_Do   ,       "DO"    },
+        {       cmd_Rp1,        fn_Rp1  ,       ""      },
+        {       cmd_Do1,        fn_Do1  ,       ""      },
+        {       cmd_Ex ,        fn_Ex  ,        "EX"    },
+        {       cmd_Ex0,        fn_Ex0 ,        "EX0"   },
+        {       cmd_ExMi,       fn_ExMi,        "EX-"   },
+        {       cmd_ExPl,       fn_ExPl,        "EX+"   },
+
+    /*--- Mechanism of variable Recovering (LVOST) ---*/
+        {       cmd_LVost ,     fn_LVost,       ""      },
+        {       cmd_LVosts,     fn_LVosts,  ""          },
+        {       cmd_LVOST,      fn_NO,          "LVOST" },
+
+        /*---   Mechanism of Exception Handling ----*/
+        {       cmd_RtL ,       fn_RtL,         ""      },
+        {       cmd_RtLs,       fn_RtLs,        ""      },
+        {       cmd_NOn ,       fn_NOn,         "ON"    },
+        {       cmd_EOn ,       fn_EOn,         "EON"   },
+        {       cmd_ROn ,       fn_ROn,         "RON"   },
+        {       cmd_NtfOn ,     fn_NtfOn,       "_ON"   },
+        {       cmd_EscOn ,     fn_EscOn,       "_EON"  },
+        {       cmd_RtrOn ,     fn_RtrOn,       "_RON"  },
+
+        {       cmd_Raise_,     fn_RaiseD,      "RAISE_"        },
+        {       cmd_Raise,      fn_RaiseSt,     "_RAISE"        },
+        {       cmd_ReRaise,fn_ReRaise, "RERAISE"       },
+        {       cmd_ANY,        INTELO,         "ANY"   },
+
+        /*---     Common A-stack operations ----*/
+        {       cmd_Cnst0,      fn_Cnst0,       "0"     },
+        {       cmd_Cnst1,      fn_Cnst1,       "1"     },
+        {       cmd_Cnst2,      fn_Cnst2,       "2"     },
+        {       cmd_Cnst4,      fn_Cnst4,       "4"     },
+
+        {       cmd_C  ,        fn_C,           "C"     },
+        {       cmd_C2  ,       fn_C2,          "C2"    },
+        {       cmd_C3  ,       fn_C3,          "C3"    },
+        {       cmd_C4  ,       fn_C4,          "C4"    },
+        {       cmd_CT  ,       fn_CT,          "CT"    },
+
+        {       cmd_E2  ,       fn_E2,          "E2"    },
+        {       cmd_E3  ,       fn_E3,          "E3"    },
+        {       cmd_E4  ,       fn_E4,          "E4"    },
+        {       cmd_ET  ,       fn_ET,          "ET"    },
+
+        {       cmd_D  ,        fn_D,           "D"     },
+        {       cmd_D2 ,        fn_D2,          "DD"    },
+        {       cmd_D3 ,        fn_D3,          "DDD"   },
+        {       cmd_D4 ,        fn_D4,          "DDDD"  },
+        {       cmd_E2D ,       fn_E2D,         "E2D"   },
+
+        {       cmd_DS ,        fn_DS,          "DS"    },
+        {       cmd_Deep,       fn_Deep,        "DEEP"  },
+
+        /*---     Arithmetic stack operations ----*/
+        {       cmd_TN1,        fn_TN1,         "T-1"   },
+        {       cmd_T0 ,        fn_T0,          "T0"    },
+        {       cmd_T1 ,        fn_T1,          "T1"    },
+        {       cmd_T2 ,        fn_T2,          "T2"    },
+        {       cmd_T4 ,        fn_T4,          "T4"    },
+
+        {       cmd_Add ,       fn_Add,         "+"     },
+        {       cmd_Add1 ,      fn_Add1,        "1+"    },
+        {       cmd_Add2 ,      fn_Add2,        "2+"    },
+        {       cmd_Add3 ,      fn_Add3,        "3+"    },
+        {       cmd_Add4 ,      fn_Add4,        "4+"    },
+
+        {       cmd_Sub ,       fn_Sub,         "-"     },
+        {       cmd_Sub1 ,      fn_Sub1,        "1-"    },
+        {       cmd_Sub2 ,      fn_Sub2,        "2-"    },
+        {       cmd_Sub3 ,      fn_Sub3,        "3-"    },
+        {       cmd_Sub4 ,      fn_Sub4,        "4-"    },
+
+        {       cmd_Neg  ,      fn_Neg ,        "NEG"   },
+        {       cmd_Abs  ,      fn_Abs ,        "ABS"   },
+        {       cmd_Sgn  ,      fn_Sgn ,        "SGN"   },
+        {       cmd_Min  ,      fn_Min ,        "MIN"   },
+        {       cmd_Max  ,      fn_Max ,        "MAX"   },
+
+        {       cmd_Mult ,      fn_Mult,        "*"     },
+        {       cmd_Div  ,      fn_Div ,        "/"     },
+
+        /*---     Logical and Bit operations ----*/
+        {       cmd_Lt  ,       fn_Lt ,         "<"     },
+        {       cmd_LE  ,       fn_LE ,         "<="    },
+        {       cmd_Eq  ,       fn_Eq ,         "="     },
+        {       cmd_Gt  ,       fn_Gt ,         ">"     },
+        {       cmd_GE  ,       fn_GE ,         ">="    },
+        {       cmd_Seg  ,      fn_Seg ,        "SEG"   },
+
+        {       cmd_Not  ,      fn_Not ,        "NOT"   },
+        {       cmd_Inv  ,      fn_Inv ,        "INV"   },
+        {       cmd_And  ,      fn_And ,        "&"     },
+        {       cmd_Or   ,      fn_Or  ,        "&0"    },
+        {       cmd_Xor  ,      fn_Xor ,        "'+'"   },
+
+        {       cmd_Shl  ,      fn_Shl ,        "SHL"   },
+        {       cmd_Shr  ,      fn_Shr ,        "SHR"   },
+        {       cmd_Sht  ,      fn_Sht ,        "SHT"   },
+
+        {       cmd_SwB  ,      fn_SwB ,        "SWB"   },
+        {       cmd_SwW  ,      fn_SwW ,        "SWW"   },
+        {       cmd_Lo  ,       fn_Lo ,         "LO"    },
+        {       cmd_Hi  ,       fn_Hi ,         "HI"    },
+        {       cmd_SetLo,      fn_SetLo,       "SETLO" },
+        {       cmd_SetHi,      fn_SetHi,       "SETHI" },
+        {       cmd_SgX,        fn_SgX,         "SGX"   },
+
+        /*--- Data operations ---*/
+        {       cmd_Cnst,       fn_Cnst,        "Cnst"  },
+        {       cmd_LVal,       fn_LVal,        "@L"    },
+        {       cmd_WVal,       fn_WVal,        "@W"    },
+        {       cmd_BVal,       fn_BVal,        "@B"    },
+        {       cmd_CLVal,      fn_CLVal,       "C@L"   },
+        {       cmd_CWVal,      fn_CWVal,       "C@W"   },
+        {       cmd_CBVal,      fn_CBVal,       "C@B"   },
+
+        {       cmd_TL ,        fn_TL,          "!TL"   },
+        {       cmd_TW ,        fn_TW,          "!TW"   },
+        {       cmd_TB ,        fn_TB,          "!TB"   },
+        {       cmd_TL_,        fn_TL_,         "<!TL"  },
+        {       cmd_TW_,        fn_TW_,         "<!TW"  },
+        {       cmd_TB_,        fn_TB_,         "<!TB"  },
+
+        {       cmd_ValBit,     fn_ValBit,      "@BI"   },
+        {       cmd_StBit,      fn_StBit ,      "!BI"   },
+        {       cmd_StBit1,     fn_StBit1,      "!BI1"  },
+        {       cmd_StBit0,     fn_StBit0,      "!BI0"  },
+
+        {       cmd_SetL,       fn_SetL,        "!!!ML" },
+        {       cmd_SetW,       fn_SetW,        "!!!MW" },
+        {       cmd_SetB,       fn_SetB,        "!!!MB" },
+        {       cmd_MoveL,      fn_MoveL,       "!SL"   },
+        {       cmd_MoveW,      fn_MoveW,       "!SW"   },
+        {       cmd_MoveB,      fn_MoveB,       "!SB"   },
+        {       cmd_SrchB,      fn_SrchB,       "SRCHB" },
+        {       cmd_isk,        fn_Isk,         "ISK"   },
+
+/*---      Data structure operations     ---*/
+
+        /*--  Data Registers Access Operations  --*/
+        {       cmd_GetDBAdr,   fn_GetDBAdr,    "@DATA"         },
+        {       cmd_SetDBAdr,   fn_SetDBAdr,    "!DATA"         },
+        {       cmd_GetTypeAdr, fn_GetTypeAdr,  "@TYPE"         },
+        {       cmd_SetTypeAdr, fn_SetTypeAdr,  "!TYPE"         },
+
+        /*---- Prefix Operations    ----*/
+        {       cmd_VARST,      fn_VARST,       "!"     },
+        {       cmd_VARADR,     fn_VARADR,      "'"     },
+        {       cmd_VARALLSET, fn_VARALLSET,    "!!!"   },
+        {       cmd_VARST1,     fn_VARST1,      "!1"    },
+        {       cmd_VARST0,     fn_VARST0,      "!0"    },
+        {       cmd_VARADD,     fn_VARADD,      "!+"    },
+        {       cmd_VARSUB,     fn_VARSUB,      "!-"    },
+        {       cmd_VARDIMQ, fn_VARDIMQ,        "DIM?"  },
+        {       cmd_VARSIZEQ, fn_VARSIZEQ,      "SIZE?" },
+        {       cmd_VARINC,     fn_VARINC,      "!1+"   },
+        {       cmd_VARDEC,     fn_VARDEC,      "!1-"   },
+        {       cmd_VARCAPQ, fn_VARCAPQ,        "CAP?"  },
+
+        /*-- A-Stack Data Operations  --*/
+        {       cmd_VARDIMQs, fn_VARDIMQs,      "DIM?'" },
+        {       cmd_VARSIZEQs, fn_VARSIZEQs, "SIZE?'" },
+
+        /*--   Get Adr  Operations  --*/
+        {       cmd_GETADR,     fn_GETADR,        "GETADR"      },
+        {       cmd_GETADR_OWN, fn_GETADR_OWN,"GETADR_OWN"      },
+        {       cmd_GETADR_REL, fn_GETADR_REL,"GETADR_REL"      },
+
+        /*---    String Prefix operations ---*/
+        {       cmd_SByte,      fn_SByte,       "ST@B"},
+        {       cmd_SRpl,       fn_SRpl,        "SRPL"},
+        {       cmd_SCmp,       fn_SCmp,        "SCMP"},
+        {       cmd_SAddB,      fn_SAddB,       "SADDB"},
+        {       cmd_SLen,       fn_SLen,        "SLEN"},
+        {       cmd_SSsbi,      fn_SSsbi,       "SSSBI"},
+        {       cmd_SSsb,       fn_SSsb,        "SSSB"},
+        {       cmd_SIsb,       fn_SIsb,        "SISB"},
+        {       cmd_SCut,       fn_SCut,        "SCUT"},
+        {       cmd_SCap,       fn_SCap,        "SCAP"},
+        {       cmd_SDel,       fn_SDel,        "SDEL"},
+        {       cmd_SIns,       fn_SIns,        "SINS"},
+        {       cmd_SDsb,       fn_SDsb,        "SDSB"},
+        {       cmd_SAdd,       fn_SAdd,        "SADD"},
+        {       cmd_SClr,       fn_SClr,        "SCLR"},
+        {       cmd_SOvr,       fn_SOvr,        "SOVR"},
+
+        /* some operations, concerning strings  */
+        {       cmd_arg2str, fn_arg2str, "ARG2STR"},
+        {       cmd_dpfname, fn_dpfname, "DPFNAME"},
+
+/**** Specifical Operations for Type Descriptors ***/
+
+        {       cmd_VarAdr ,    fn_VarAdr,      ""      },
+
+        /*-- Long Var --*/
+        {       cmd_LVarDec,    fn_LVarDec,     ""      },
+        {       cmd_LVarInc,    fn_LVarInc,     ""      },
+        {       cmd_LVarSub,    fn_LVarSub,     ""      },
+        {       cmd_LVarAdd,    fn_LVarAdd,     ""      },
+        {       cmd_LVarSt0,    fn_LVarSt0,     ""      },
+        {       cmd_LVarSt1,    fn_LVarSt1,     ""      },
+        {       cmd_LVarSt ,    fn_LVarSt,      ""      },
+        {       cmd_LVarVal,    fn_LVarVal,     ""      },
+
+        /*-- Word Var --*/
+        {       cmd_WVarDec,    fn_WVarDec,     ""      },
+        {       cmd_WVarInc,    fn_WVarInc,     ""      },
+        {       cmd_WVarSub,    fn_WVarSub,     ""      },
+        {       cmd_WVarAdd,    fn_WVarAdd,     ""      },
+        {       cmd_WVarSt0,    fn_WVarSt0,     ""      },
+        {       cmd_WVarSt1,    fn_WVarSt1,     ""      },
+        {       cmd_WVarSt ,    fn_WVarSt,      ""      },
+        {       cmd_WVarVal,    fn_WVarVal,     ""      },
+
+        /*-- Byte Var --*/
+        {       cmd_BVarDec,    fn_BVarDec,     ""      },
+        {       cmd_BVarInc,    fn_BVarInc,     ""      },
+        {       cmd_BVarSub,    fn_BVarSub,     ""      },
+        {       cmd_BVarAdd,    fn_BVarAdd,     ""      },
+        {       cmd_BVarSt0,    fn_BVarSt0,     ""      },
+        {       cmd_BVarSt1,    fn_BVarSt1,     ""      },
+        {       cmd_BVarSt ,    fn_BVarSt,      ""      },
+        {       cmd_BVarVal,    fn_BVarVal,     ""      },
+
+
+        /*-- Act Var --*/
+        {       cmd_AVarVal,    fn_AVarVal,     ""      },
+
+        /*-- Int Var --*/
+        {       cmd_IVarVal,    fn_IVarVal,     ""      },
+
+        /*-- SByte Var --*/
+        {       cmd_SBVarVal,   fn_SBVarVal,""  },
+
+
+      /*--- Universal Vector -----------*/
+        {       cmd_VSizeQ,     fn_VSizeQ,      ""      },
+        {       cmd_VDimQ,      fn_VDimQ,       ""      },
+        {       cmd_VCapQ,      fn_VCapQ,       ""      },
+        {       cmd_VctrDec,    fn_VctrDec,     ""      },
+        {       cmd_VctrInc,    fn_VctrInc,     ""      },
+        {       cmd_VctrSub,    fn_VctrSub,     ""      },
+        {       cmd_VctrAdd,    fn_VctrAdd,     ""      },
+        {       cmd_VctrSt0,    fn_VctrSt0,     ""      },
+        {       cmd_VctrSt1,    fn_VctrSt1,     ""      },
+        {       cmd_VctrAdr ,   fn_VctrAdr,     ""      },
+        {       cmd_VctrAllSet, fn_VctrAllSet,  ""      },
+        {       cmd_VctrSt ,    fn_VctrSt,      ""      },
+        {       cmd_VctrVal,    fn_VctrVal,     ""      },
+
+    /*--- Universal Array -----------*/
+        {       cmd_ArrDec,     fn_ArrDec,      ""      },
+        {       cmd_ArrInc,     fn_ArrInc,      ""      },
+        {       cmd_ArrSub,     fn_ArrSub,      ""      },
+        {       cmd_ArrAdd,     fn_ArrAdd,      ""      },
+        {       cmd_ArrSt0,     fn_ArrSt0,      ""      },
+        {       cmd_ArrSt1,     fn_ArrSt1,      ""      },
+        {       cmd_ArrAdr,     fn_ArrAdr,      ""      },
+        {       cmd_ArrSt ,     fn_ArrSt,       ""      },
+        {       cmd_ArrVal,     fn_ArrVal,      ""      },
+
+    /*--- Universal Record -----------*/
+        {       cmd_StructSt,   fn_StructSt,    "" },
+        {       cmd_StructSt0,  fn_StructSt0,   "" },
+        {       cmd_StructSize, fn_StructSize,  "" },
+
+        /*--- String Var ---*/
+        {       cmd_sSByte,     fn_sSByte,      ""},
+        {       cmd_sSRpl,      fn_sSRpl,       ""},
+        {       cmd_sSCmp,      fn_sSCmp,       ""},
+        {       cmd_sSAddB,     fn_sSAddB,      ""},
+        {       cmd_sSLen,      fn_sSLen,       ""},
+        {       cmd_sSSsbi,     fn_sSSsbi,      ""},
+        {       cmd_sSSsb,      fn_sSSsb,       ""},
+        {       cmd_sSIsb,      fn_sSIsb,       ""},
+        {       cmd_sSCut,      fn_sSCut,       ""},
+        {       cmd_sSCap,      fn_sSCap,       ""},
+        {       cmd_sSDel,      fn_sSDel,       ""},
+        {       cmd_sSIns,      fn_sSIns,       ""},
+        {       cmd_sSDsb,      fn_sSDsb,       ""},
+        {       cmd_sSAdd,      fn_sSAdd,       ""},
+        {       cmd_sSClr,      fn_sSClr,       ""},
+        {       cmd_sSOvr,      fn_sSOvr,       ""},
+        {       cmd_sStSets,	fn_sStSets,		""},
+        {       cmd_sStrAd,     fn_sStrAd,      ""},
+        {       cmd_sStSet,     fn_sStSet,      ""},
+        {       cmd_sStVal,     fn_sStVal,      ""},
+        {       cmd_ttin,       fn_ttin,	"TTIN"},
+
+        /**** Data structure Descriptors ***/
+        {       cmd_LVARTYPE, fn_NO,    "LVAR@" },
+        {       cmd_WVARTYPE, fn_NO,    "WVAR@" },
+        {       cmd_BVARTYPE, fn_NO,    "BVAR@" },
+        {       cmd_AVARTYPE, fn_NO,    "AVAR@" },
+        {       cmd_IVARTYPE, fn_NO,    "IVAR@" },
+        {       cmd_SBVARTYPE,fn_NO,    "SVAR@" },
+        {       cmd_VCTRTYPE, fn_NO,    "VCTR@" },
+        {       cmd_ARRTYPE,   fn_NO,   "ARR@"  },
+        {       cmd_STRUCTTYPE,fn_NO,   "STRUCT@" },
+        {       cmd_STRTYPE,   fn_NO,   "BSTR@"  }, // for InitDSSP
+
+        /*--- Input/output console operations ---*/
+        {       cmd_Tobs,       fn_Tobs,        "TOB'"  },
+        {       cmd_Trbs_0,     fn_Trbs_0,      "TRB'0"         },
+        {       cmd_Trbss_0,    fn_Trbss_0,     "TRB''0"        },
+        {       cmd_Trbs_1,     fn_Trbs_1,      "TRB'1"         },
+        {       cmd_Trbss_1,    fn_Trbss_1,     "TRB''1"        },
+
+        {       cmd_OS,         fn_OS,          "OS?"   },
+        {       cmd_WUp,        fn_WUp,         "WUP"   },
+        {       cmd_WDown,      fn_WDown,       "WDOWN" },
+        {       cmd_WAtr,       fn_WAtr,        "WATR"  },
+        {       cmd_RAtr,       fn_RAtr,        "RATR"  },
+        {       cmd_WAtrL,      fn_WAtrL,       "WATRLA"},
+        {       cmd_RCP,        fn_RCP,         "RCP"   },
+        {       cmd_SCP,        fn_SCP,         "SCP"   },
+        /*--- Input/output file operations ---*/
+        {       cmd_FSFUN_C,    fn_FSFUN_C,         "FSFUN_C"       },
+        {       cmd_OPEN_C,     fn_OPEN_C,          "OPEN_C"        },
+        {       cmd_CLOS_C,     fn_CLOS_C,          "CLOS_C"        },
+        {       cmd_LSEEK_C,    fn_LSEEK_C,         "LSEEK_C"       },
+        {       cmd_RDWR_C,     fn_RDWR_C,          "RDWR_C"        },
+        {       cmd_CRT0_C,     fn_CRT0_C,          "CRT0_C"        },
+        {       cmd_CRT_C,      fn_CRT_C,           "CRT_C"         },
+        {       cmd_CRT_TMP_C,  fn_CRT_TMP_C,		"CRT_TMP_C"     },
+        {       cmd_REN_C,      fn_REN_C,           "REN_C"         },
+        {       cmd_DEL_C,		fn_DEL_C,           "DEL_C"         },
+
+        /*--- Directory operations ---*/
+        {       cmd_GETDRV_C,   fn_GETDRV_C,		"GETDRV_C"      },
+        {       cmd_CHDIR_C,    fn_CHDIR_C,			"CHDIR_C"       },
+        {       cmd_SETDRV_C,   fn_SETDRV_C,		"SETDRV_C"      },
+        {       cmd_GETCHDIR_C, fn_GETCHDIR_C,		"GETCHDIR_C"	},
+        {       cmd_FFF_C,      fn_FFF_C,           "FFF_C"			},
+        {       cmd_FNF_C,      fn_FNF_C,           "FNF_C"         },
+        {       cmd_CLOSEALL_C, fn_CLOSEALL_C,      "CLOSEALL_C"    },
+
+        {       cmd_PortB,      fn_PORTB,          "PORTB"         },
+        {       cmd_PortW,      fn_PORTW,          "PORT"          },
+        {       cmd_PortD,      fn_PORTD,          "PORTD"         },
+        {       cmd_sPortB,     fn_sPORTB,         "!PORTB"        },
+        {       cmd_sPortW,     fn_sPORTW,         "!PORT"         },
+        {       cmd_sPortD,     fn_sPORTD,         "!PORTD"        },
+
+
+        /*--- Win32API operations ---*/
+        {       cmd_Win32API,   fn_Win32API,    "WIN32API_"     },
+        {       cmd_WinFnExec,  fn_WinFnExec,   "WINFNEXEC"     },
+        {       cmd_FormWndProc,fn_FormWndProc, "_FORMWNDPROC"  },
+        {       cmd_RealADR,    fn_RealADR,     "REALADR"       },
+        {       cmd_DsspADR,    fn_DsspADR,     "DSSPADR"       },
+
+
+        {       cmd_TAL,                fn_TAL,                 "!TAL"          },
+        {       cmd_TAW,                fn_TAW,                 "!TAW"          },
+        {       cmd_TAB,                fn_TAB,                 "!TAB"          },
+        {       cmd_aAB,                fn_aAB,                 "@AB"           },
+        {       cmd_aAW,                fn_aAW,                 "@AW"           },
+        {       cmd_aAL,                fn_aAL,                 "@AL"           },
+        {       cmd_mallocD,            fn_mallocD,             "MALLOC"        },
+        {       cmd_reallocD,           fn_reallocD,            "REALLOC"       },
+        {       cmd_freeD,              fn_freeD,               "FREE"          },
+        {       cmd_NULL,               fn_NULL,                "NULL"          },
+        {       cmd_DFADR,              fn_DFADR,               "DFADR"                 },
+        {       cmd_FDADR,              fn_FDADR,               "FDADR"                 },
+        {       cmd_interr,             fn_interr,              "INTERR"        },
+        {       cmd_ExecDSSP,   fn_ExecDSSP,    "EXECDSSP"      },
+
+
+        /*--- Debug operations ---*/
+        {       cmd_G11,        fn_G11,         "\\G11" },
+        {       cmd_Restart,fn_Restart, "RESTART"       },
+
+        /*--- Coroutine (Context) operations ---*/
+		{ cmd_Transfer,    fn_Transfer,    "TRANSFER"     },
+		{ cmd_NewContext,  fn_NewContext,  "NEWCONTEXT"   },
+		{ cmd_MainContext, fn_MainContext, "MAINCONTEXT"  },
+		{ cmd_ForceContext,fn_ForceContext,"FORCECONTEXT" },
+        
+        /*--- Interrupt Mehanism operations ---*/
+		{ cmd_RaiseIntrpt, fn_RaiseIntrpt, "INTR" },
+		{ cmd_GetIntVect,  fn_GetIntVect,  "GetIntVect" },
+		{ cmd_SetIntVect,  fn_SetIntVect,  "SetIntVect" },
+	{ cmd_RestoreIntVect, fn_RestoreIntVect,"RestoreIntVect"},
+		{ cmd_ION,         fn_ION,         "ION"        },
+		{ cmd_IOFF,        fn_IOFF,        "IOFF"       },
+		{ cmd_IRESET,      fn_IRESET,      "IRESET"     },
+		{ cmd_IntrON,      fn_IntrON,      "xINTRON"    },
+		{ cmd_IntrOFF,     fn_IntrOFF,     "xINTROFF"   },
+
+        /*--- System Important Codes ---*/
+        {       INTELO,         fn_NO,  "codeINT"       },
+        {       CNSTBODY,       fn_NO,  "codeCNST"      },
+        {       VARTELO,        fn_NO,  "codeVAR"       },
+        {       fn_UndefOp,     fn_NO,  "codeUNDEF"     },
+        {       fn_TxtCnst,     fn_NO,  "codeTXT"       },
+        {       fn_PTxtCnst,fn_NO,      "codePTXT"      },
+        {       fn_Call,        fn_NO,  "codeCALL"      }, // Is it needed????
+
+        /*--- System Var Access operations ---*/
+        // fn_NO means not to put value in Command memory
+        {       Adr_PUSK ,      fn_NO, "APUSK"  },
+        {       Adr_OPSB ,      fn_NO, "AOPSB"  },
+        {       Adr_CSB ,       fn_NO, "ARSB"   },
+
+        {       Adr_OWNBASE,fn_NO, "OWN_BASE"   },
+        {       Adr_WIMAGE, fn_NO, "WIMAGEA"    },
+        {       Adr_SWIM,   fn_NO, "SWIMA"      },
+
+        {       Adr_TOS,     fn_NO, "TOSOUT"    },
+        {       Adr_NOIND,   fn_NO, "ANOIND"    },
+        {       Adr_ERSTR,   fn_NO, "AERSTR"    },
+        {       REAXA,          fn_NO,  "REAXA" },
+        {       REBXA,          fn_NO,  "REBXA" },
+        {       RECXA,          fn_NO,  "RECXA" },
+        {       REDXA,          fn_NO,  "REDXA" },
+        {       RESIA,          fn_NO,  "RESIA" },
+        {       REDIA,          fn_NO,  "REDIA" },
+        {       REBPA,          fn_NO,  "REBPA" },
+        {       RESPA,          fn_NO,  "RESPA" },
+        {       REFLA,          fn_NO,  "REFLA" },
+        {       RESA,           fn_NO,  "RESA"  },
+        {       RCSA,           fn_NO,  "RCSA"  },
+        {       RDSA,           fn_NO,  "RDSA"  },
+        {       RSSA,           fn_NO,  "RSSA"  },
+        {       RFSA,           fn_NO,  "RFSA"  },
+        {       RGSA,           fn_NO,  "RGSA"  },
+
+        /*--- End of Main table ---*/
+ /*-----------------------------------------------------------------*/
+
+        /*--- Start of TEST table ---*/
+        {       cmd_TEST,       fn_NO,  ""      },
+
+        /*--- Dialog operations ---*/
+        {       cmd_PrT,        fn_PrT,         ".T"    },
+        {       cmd_PrTx,       fn_PrTx,        ".X"    },
+        {       cmd_PrS,        fn_PrS,         "..S"   },
+        {       cmd_PrSx,       fn_PrSx,        "..X"   },
+        {       cmd_PrTOS,      fn_PrTOS,       ".TOS"  },
+        {       cmd_TIS,        fn_TIS,         ".TIS"  },
+
+        /*--- Slovar operations ---*/
+        {       cmd_FindWord ,  fn_FindWord,    "FINDWORD" },
+        {       cmd_GetWord  ,  fn_GetWord ,    "GETWORD"  },
+        {       cmd_PutWord  ,  fn_PutWord,     "PUTWORD"  },
+        {       cmd_UnWord   ,  fn_UnWord,      "UNWORD"   },
+        {       cmd_AdrWord  ,  fn_AdrWord,     "''WORD"   },
+
+#ifdef  TEST_VERS
+
+        /*--- Test operations ---*/
+        {       cmd_A0 ,        fn_A0,          "A0"    },
+        {       cmd_A1 ,        fn_A1,          "A1"    },
+        {       cmd_A2 ,        fn_A2,          "A2"    },
+        {       cmd_A3 ,        fn_A3,          "A3"    },
+        {       cmd_A4 ,        fn_A4,          "A4"    },
+        {       cmd_A5 ,        fn_A5,          "A5"    },
+        {       cmd_A6 ,        fn_A6,          "A6"    },
+        {       cmd_N,          fn_N,           "N"     },
+        {       cmd_E  ,        fn_E,           "E"     },
+        {       cmd_TestAdr ,   fn_TestAdr,     "TESTADR" },
+
+        {       cmd_A ,         INTELO,         "A"     },
+        {       cmd_AA,         INTELO,         "AA"},
+        {       cmd_B ,         INTELO,         "B"     },
+
+        {       cmd_VARX,       VARTELO,        "X"     },
+        {       cmd_SX ,        INTELO,         "!X"    },
+        {       cmd_AX ,        INTELO,         "'X"    },
+
+        {       cmd_VCTRV,      VARTELO,        "LV"    },
+        {       cmd_SV ,        INTELO,         "!LV"   },
+        {       cmd_AV ,        INTELO,         "'LV"   },
+
+        {       cmd_VCTRW,      VARTELO,        "WV"    },
+        {       cmd_SW ,        INTELO,         "!WV"   },
+        {       cmd_AW ,        INTELO,         "'WV"   },
+
+        {       cmd_VCTRBV,     VARTELO,        "BV"    },
+        {       cmd_SBV ,       INTELO,         "!BV"   },
+        {       cmd_ABV ,       INTELO,         "'BV"   },
+
+        {       cmd_TEST_ON, INTELO,    "TEST_ON"       },
+        {       cmd_TEST_DO, INTELO,    "TEST_DO"       },
+        {       cmd_TEST_RP, INTELO,    "TEST_RP"       },
+
+        {       cmd_CX, CNSTBODY,       "CX"    },
+
+        {       cmd_TestExecWndProc,fn_TestExecWndProc, "TestExecWndProc"       },
+        {       cmd_TestWin32API,       fn_TestWin32API,        "TestWin32API"  },
+
+#endif
+
+        {       cmd_Halt,       fn_Halt,        "$"     },
+
+
+
+        /*--- End of Test table ---*/
+        {       cmd_   ,        fn_NO,          ""      }
+};

@@ -1,0 +1,329 @@
+/*********************************************************/
+/***     KERNEL for DSSP INTERPRETER  III VARIANT      ***/
+/***  -----------------------------------------------  ***/
+/***             MAIN DSSP DEFINITIONS                 ***/
+/***  -----------------------------------------------  ***/
+/***       started by Burtsev A.A. 23 march   1998     ***/
+/***          last modification    22 september 1998   ***/
+/*********************************************************/
+
+/***------  MAIN REGISTERS of DSSP-PROCESSOR :  --------***
+
+    opsp - OPerand Stack Pointer
+     csp - Control Stack Pointer
+    opsb - OPerand Stack Bottom ( start value for opsp )
+     csb - Control Stack Bottom ( start value for  csp )
+      pc - Program Counter of DSSP-program, which refers to
+          threaded code - body of current DSSP-procedure
+  cmd  - current command  ( that, to which pc points )
+
+ DsspMem - address of begining of DSSP-memory,
+        where bodys, stack and DSSP-data are placed
+ CmdMem - base address of command memory, where bodys
+          of all dssp-procedures are placed
+         ( let CmdMem = DsspMem )
+
+ adrcmd - absolute adress of body for execution DSSP-command
+          = CmdMem + cmd
+
+ IntrptFlag - Flag for interrupt of DSSP-interpretation
+          = FALSE (0) , when no interrupts
+          =  iN   (>0), if interrupt number iN must be handled
+
+  StopFlag  - Flag for continue DSSP-interpretation
+          = FALSE (0), when to continue
+          =  cN  (>0), when to stop DSSP-interpretation
+                     with completion code cN
+
+ ***---------------------------------------------------***/
+
+/*** ======= INTERPRETATION of THREADED CODE ========== ***
+
+           pc ->  | cmd |
+                  |     |
+  cmd  - current command  ( that, to which pc points )
+
+  cmd is the reference to body of DSSP-procedure in command memory.
+  cmd is not absolute address of the body, but offset of this body
+      from the begining of command memory.
+  Command memory  is an array, which starts at address CmdMem
+  and so address of body of dssp-procedure is calculated as
+
+  adrcmd = CmdMem + cmd
+
+   If this procedure is primitive, than it contains only
+      the number of C-function, which executes this primitive
+
+   adrcmd -> | nf_func |   nf_func - number of C-function
+
+   nf-func is the index to Table of functions (FTABLE),
+   so address of C-function is defined as value of
+   nf-th elements of function table :
+          adrfunc = FTABLE [nf_func]
+                FTABLE:
+   nf_func-> | adr_func |  adr_func - address of C-function
+
+   If the DSSP-procedure, to which cmd refers, is interpretive,
+   it contains one number of special C-function INT and
+   folowing list of 32-bit values, that will be interpreted
+   as threaded code. This list must be finished by address of
+   body of special command _K.
+      Comand _INT starts interpretation of new-level procedure,
+   created in terms of threaded code, and command _K finishes
+   this interpretation.
+      So code of the DSSP-procedure :
+         : P  a  b  c  Z  x  y  ;
+   is :
+     adrcmd ->  P:| nf_INT |
+                  | cmd_a  |
+                  | cmd_b  |
+                  | . . .  |
+                  | cmd_;  |
+
+***-----------------------------------------------------***/
+
+/*** ========= STRUCTURE of ITTC THREADED CODE ========= ***
+
+     COMMAND MEMORY :      FTABLE :      CODEs of C-functions :
+
+ CmdMem /----------\    /----------\     /----> /-- body of --\
+        | . . .   |     |   . . .  |     |      | C-function  |
+ /--->  |nf_func_a|>--->|adr_func_a|>----/      |    for      |
+ | /->  |nf_func_b|>--->|adr_func_b|>-----\     | a-operation |
+ | |    | . . .   |     |   . . .  |      |     \-------------/
+ | |    |nf_func_x|     |adr_func_x|      \---> /-- body of --\
+ | |    | . . .   |     |   . . .  |            | C-function  |
+ | | /->|nf_func_;|>--->|adr_func_;|>-----\     |    for      |
+ | | |  | . . .   |     |   . . .  |      |     | b-operation |
+ | | |       . . .          . . .         |     \-------------/
+ | | \---CmdMem + <-----\                 |         . . .
+ | \--- CmdMem + <----\ |                 \---> /-- body of --\
+ \---- CmdMem + <---\ | |                       | C-function  |
+            . . .   | | |                       |    for      |
+     body of P:     | | |                       | ;-operation |
+        | nf_INT|   | | |                       \-------------/
+        | cmd_a |>--/ | |
+        | cmd_b |>----/ |      : P  a  b  c  Z  x  y  ;
+        | cmd_c |       |
+   pc-> | cmd_Z |>----\ |     a,b,c,x,y - primitive operations
+        | cmd_x |     | |       Z - DSSP-procedure, which body
+        | cmd_y |     | |          is defined as threaded code
+        | cmd_; |     | |      : Z ...     ;
+          ...         | |
+   /-- CmdMem + ------/ |   /--FTABLE:---\
+   | body of Z:         |   |   . . .    |
+   \--> | nf_INT|>------|-->|adr_func_INT|>-->/--- body of ---\
+        |  ...  |       |   |   . . .    |    |   C-function  |
+        |  ...  |       |                     |       for     |
+        |  ...  |       |                     | INT_operation |
+        | cmd_; |>------/                     \---------------/
+
+ ***---------------------------------------------------***/
+
+
+/*********************************************************/
+/******          GLOBAL TYPE DEFINITIONS           *******/
+/*********************************************************/
+
+typedef char    int8 ;  /*  8-bit value */
+typedef unsigned char byte ;  /*  byte as unsigned 8-bit value */
+typedef short int int16;/* 16-bit value */
+typedef unsigned short int      word ;  /* word as unsigned 16-bit value */
+typedef long  int int32;/* 32-bit value */
+typedef unsigned long  int dword;/* unsigned 32-bit value */
+
+typedef void    *vptr;  /* pointer to any value */
+typedef byte    *bptr;  /* pointer to byte */
+typedef word    *wptr;  /* pointer to word */
+
+typedef int32   *lptr;  /* pointer to 32-bit value */
+typedef void    (*fptr)(void);  /* pointer to function without parameters */
+
+typedef int16   bool;   /* boolean value */
+typedef int32   cmnd;   /* command as a 32-bit value */
+typedef cmnd    *pcmnd; /* pointer to cmnd value */
+
+#ifndef FALSE
+        #define FALSE   (0)
+#endif
+#ifndef TRUE
+        #define TRUE    (1)
+#endif
+
+/*********************************************************/
+/******          GLOBAL VAR   DEFINITIONS          *******/
+/*********************************************************/
+
+lptr    opsb, opsp, csb, csp, pc ;
+lptr    cmd;
+char    **argv_gl,*namep_gl;
+int     argc_gl,param_st;
+bptr    DsspMem ;
+#define CmdMem DsspMem  // Assume CmdMem = DsspMem
+int32   OwnBase;        // OWNBASE
+bool    StopFlag, IntrptFlag ;
+
+
+/*********************************************************/
+/******              MACRO DEFINITIONS             *******/
+/*********************************************************/
+
+//#define       DIRECT_MEMORY
+
+/* =========   ACCESS TO DSSP MEMORY   =============== */
+
+/* --------  GET ADRESS of DSSP MEMORY LOCATION ------ */
+
+// #ifdef       DIRECT_MEMORY
+//      //-------- DIRECT ACCESS TO MEMORY ----------------
+//      // Every DSSP-address (ADRB), address to DSSP-memory
+//      // is real byte address
+//
+//      // get real address of byte value for byte DSSP-address
+//      #define ADR_MB(ADRB)    (bptr)(ADRB)
+//
+//      // get real address of word value for byte DSSP-address
+//      #define ADR_MW(ADRB)    (wptr)(ADRB)
+//
+//      // get real address of long value for byte DSSP-address
+//      #define ADR_ML(ADRB)    (lptr)(ADRB)
+//
+//      // get DSSP-address for real address
+//      #define DSSPADR(ADR)    (bptr)(ADR)
+//
+//      // get PC-address for command offset
+//      #define PCADR(CMD)      (lptr)(CmdMem+(int32)(CMD))
+//
+//      // get byte DSSP-address for offset of DSSP-data
+//      #define DATADR(DADR)    (bptr)(DsspMem+(int32)(DADR))
+//
+// #else
+//======== ACCESS TO ARRAY MEMORY ================
+// Every DSSP-address (ADRB), address to DSSP-memory
+// is index of byte array
+
+// get real address of byte value for byte DSSP-address
+#define ADR_MB(ADRB)    (bptr)(DsspMem+(int32)(ADRB))
+
+// get real address of word value for byte DSSP-address
+#define ADR_MW(ADRB)    (wptr)(DsspMem+(int32)(ADRB))
+
+// get real address of long value for byte DSSP-address
+#define ADR_ML(ADRB)    (lptr)(DsspMem+(int32)(ADRB))
+
+// get DSSP-address for real address
+#define DSSPADR(ADR)    (int32)((bptr)(ADR)-DsspMem)
+
+// get PC-address for command offset
+#define PCADR(CMD)      (lptr)(CMD)
+
+// get byte DSSP-address for offset of DSSP-data
+#define DATADR(DADR)    (bptr)(DADR)
+
+
+/* -----  ACCESS to VALUE of DSSP MEMORY LOCATION ---- */
+
+// access to byte value with byte DSSP-address
+#define MB(ADRB)        (*ADR_MB(ADRB))
+
+// access to word value with byte DSSP-address
+#define MW(ADRB)        (*ADR_MW(ADRB))
+
+// access to byte value with byte DSSP-address
+// #define ML(ADRB)        (*ADR_ML(ADRB))
+#define ML(ADRB)        (*(lptr)(DsspMem+(int32)(ADRB)))
+
+/*****==============================================***/
+
+/* --------- Operations on Control stack ---------- */
+
+/* Push 32-bit value in C-stack */
+#define CPUSH(X)        ( ML(--csp)=(int32)(X) )
+
+/* Pop 32-bit value from C-stack */
+#define CPOP(Y) ( *(lptr)(&(Y)) = ML(csp++) )
+
+/*
+#define CPOP(Y)         ( (int32)(Y) = ML(csp++) )
+ 
+#ifdef Watcom
+#define cPOP(Y,t)               ( Y = (t) ML(csp++) )
+#endif
+
+*/
+      /* Top of C-stack */
+#define CT              ( ML(csp) )
+
+/* --------- Operations on Arithmetic stack ---------- */
+
+/* Push 32-bit value in A-stack */
+#define APUSH(X)        ( ML(++opsp)=(int32)(X) )
+
+/* Pop 32-bit value from A-stack, saving it in variable */
+#define APOP(Y) ( *(lptr)(&(Y)) = ML(opsp--) )
+/*
+#define APOP(Y)         ( (int32)(Y) = ML(opsp--) )
+
+#ifdef Watcom
+#define aPOP(Y,t)               ( Y = (t)ML(opsp--) )
+#endif
+*/
+
+      /*  Delete one 32-bit value from A-stack */
+#define ADEL            ( opsp-- )
+
+      /* Delete n values from A-stack */
+#define ADELn(N)        ( opsp -= (N) )
+
+      /* Insert one position for new value in A-stack */
+#define AINS    ( opsp++ )
+
+      /* Insert n positions for new values in A-stack */
+#define AINSn(N)        ( opsp += (N) )
+
+      /* Top of A-stack */
+#define AT              ( ML(opsp) )
+
+      /* Get 32-bit value from top of A-stack, popping it */
+#define ATPOP           ( ML(opsp--) )
+
+      /* Item (32-bit value) of A-stack at deep n */
+#define AITEM(N)        ( ML(opsp-(N)) )        // so that AT is AITEM(0)
+
+      /* Deep of A-stack */
+#define ADEEP           ( opsp-opsb )
+
+      /* Make  A-stack Empty */
+#define AEMPTY          { opsp=opsb; }
+
+/* ------- Operations with command from body ---------- */
+
+      /* Get value from body, pointed by pc */
+#define GETBODYVAL              ( (int32)ML(pc++) )
+
+      /* Get command from body, pointed by pc */
+#define GETCMD          ( cmd=(lptr)ML(pc++) )
+
+
+      /* Address of body for executing command cmd */
+#define ADRCMD  ( (lptr)(CmdMem+(int32)cmd) )
+
+      /* Execute table function number NF */
+#define EXECFN(NF)      ( FTABLE[NF])()
+
+      /* Execute COMMAND, e.g. function, which is located */
+      /* in command memory at position with offset cmd */
+#define EXECMD   EXECFN(*ADRCMD)
+
+      /* Execute COMMAND CMD, e.g. function, which is located */
+      /* in command memory at position with offset CMD */
+#define EXECMD_(CMD)    { cmd=(lptr)(CMD); EXECMD; }
+
+
+/* --------- NEXT Operation ---------- */
+
+#define NEXT            { GETCMD;EXECMD; }
+
+/* --------- MAIN LOOP of INTERPRETATION --------*/
+
+#define INTLOOP do { NEXT } while (IntrptFlag==FALSE)

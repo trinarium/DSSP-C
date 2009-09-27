@@ -1,0 +1,1394 @@
+/*********************************************************/
+/***     KERNEL for DSSP INTERPRETER  III VARIANT      ***/
+/***  -----------------------------------------------  ***/
+/***        FUNCTION HEADERs, NUMBERs, TABLE           ***/
+/***  -----------------------------------------------  ***/
+/***         started by Burtsev A.A.  23 march 1998    ***/
+/***              last modification   22 sept  1998    ***/
+/***         modification Vagin S.E.  02 april 1999    ***/
+/***           ( insert prototype of _WinFnExec )      ***/
+/*********************************************************/
+
+/*********************************************************/
+/******     FUNCTION HEADERs of DSSP-OPERATIONS    *******/
+/*********************************************************/
+
+ /******      DSSP MEMORY     *******/
+ bptr AllocDsspMemory(int32 DsspMemSize); // Allocate DSSP Memory
+ void FreeDsspMem (void);       // free DSSP Memory
+
+/******      MAIN  INTERPRETATION   OPERATIONS     *******/
+ void Interpretation (void); // Exec Main DSSP Code
+ int32 ExecDpfCode (lptr StartPC); // Exec dpfeaded Code
+ void _Interrupt (void);
+ void _Halt  (void);    // HALT
+ void _Int  (void);     // INTELO
+ void _K  (void);       // ;
+ void _Nop (void);              // NOP
+ void _Call (void);             // CALLTELO
+ void _VARNAME (void);  //  VARTELO
+ void _CnstBody (void);         // CNSTCODE
+ void _TxtCnst(void);           // TXTCODE
+ void _PTxtCnst(void);          // PTXTCODE
+ void _UnOp (void);             // Unimplemented Operation
+ void _UndefOp (void);          // Undefined Operation
+
+
+/******          CONTROL   OPERATIONS              *******/
+ void _Exec (void);     // EXEC
+
+ void _If0  (void);     // IF0
+ void _IfMi (void);     // IF-
+ void _IfPl (void);     // IF+
+
+ void _Br0  (void);     // BR0
+ void _BrMi (void);     // BR-
+ void _BrPl (void);     // BR+
+ void _BrS  (void);     // BRS
+ void _Br   (void);     // BR
+ void _Else (void);     // ELSE
+ void _Br1  (void);     // BR1
+
+ void _DW   (void);     // DW   //  COND  DW  BODY
+ void _Loop (void);     // LOOP //  LOOP  BODY
+ void _DOFor(void);     // DO-  //  DO-   BODY
+
+ void _GetPC(void);     // CPC
+ void _SetPC(void);     // !PC
+ void _GetR (void);     // @R
+ void _SetR (void);     // !R
+ void _GetAdrD(void);// ''
+ void _GTP  (void);     // GTP
+
+//  LOOPs with TRAPs ( RP DO EX  )
+ void _Rp(void);        // RP
+ void _Do(void);        // DO
+ void _Rp1(void);       // RP1
+ void _Do1(void);       // DO1
+ void _Ex(void);        // EX
+ void _Ex0(void);       // EX0
+ void _ExMi(void);      // EX-
+ void _ExPl(void);      // EX+
+
+// Recovering of Variables (LVOST)
+ void _LVost  (void);   // LVost
+ void _LVosts(void);    // LVosts
+
+// Mechanism of Exception handling
+ void _RtL  (void);     // RTL
+ void _RtLs (void);     // RTLs
+ void _NOn(void);       // ON
+ void _EOn(void);       // EON
+ void _ROn(void);       // RON
+ void _NtfOn(void);     // _ON
+ void _EscOn(void);     // _EON
+ void _RtrOn(void);     // _RON
+
+ void _RaiseD(void);    //      "RAISE_"
+ void _RaiseSt(void);   //      "_RAISE"
+ void _ReRaise(void);   //      "RERAISE"
+
+ void InitMS(void);     // Init Mechanism of Situation
+
+/******         COMMON A-STACK OPERATIONS          *******/
+ void _Cnst0 (void);    // 0
+ void _Cnst1 (void);    // 1
+ void _Cnst2 (void);    // 2
+ void _Cnst4 (void);    // 4
+
+ void _C  (void);       // C
+ void _C2 (void);       // C2
+ void _C3 (void);       // C3
+ void _C4 (void);       // C4
+ void _CT (void);       // CT
+
+ void _E2 (void);       // E2
+ void _E3 (void);       // E3
+ void _E4 (void);       // E4
+ void _ET (void);       // ET
+
+ void _D  (void);       // D
+ void _D2 (void);       // DD
+ void _D3  (void);      // DDD
+ void _D4  (void);      // DDDD
+ void _E2D (void);      // E2D
+
+ void _DS  (void);      // DS
+ void _Deep (void);     // DEEP
+
+/******       ARITHMETIC STACK OPERATIONS          *******/
+ void _TN1(void);       // T-1
+ void _T0 (void);       // T0
+ void _T1 (void);       // T1
+ void _T2 (void);       // T2
+ void _T4 (void);       // T4
+
+ void _Add  (void);     // +
+ void _Add1 (void);     // 1+
+ void _Add2  (void);    // 2+
+ void _Add3  (void);    // 3+
+ void _Add4  (void);    // 4+
+
+ void _Sub  (void);     // -
+ void _Sub1 (void);     // 1-
+ void _Sub2 (void);     // 2-
+ void _Sub3 (void);     // 3-
+ void _Sub4 (void);     // 4-
+
+ void _Neg (void);      // NEG
+ void _Abs (void);      // ABS
+ void _Sgn (void);      // SGN
+ void _Min (void);      // MIN
+ void _Max (void);      // MAX
+
+ void _Mult (void);     // *
+ void _Div (void);      // /
+
+/******         LOGICAL and BIT OPERATIONS         *******/
+ void _Lt (void);       // <
+ void _LE (void);       // <=
+ void _Eq (void);       // =
+ void _Gt (void);       // >
+ void _GE (void);       // >=
+ void _Seg(void);       // SEG  //  in [A,B]
+
+ void _Not (void);      // NOT
+ void _Inv (void);      // INV
+ void _And (void);      //  &
+ void _Or (void);       //  &0
+ void _Xor (void);      //  '+'
+
+ void _Shl (void);      //  SHL
+ void _Shr (void);      //  SHR
+ void _Sht (void);      //  SHT
+
+ void _SwB (void);      // SWB
+ void _SwW (void);      // SWW
+ void _Lo (void);       // LO
+ void _Hi (void);       // HI
+ void _SetLo(void);     // SETLO
+ void _SetHi(void);     // SETHI
+ void _SgX (void);      // SGX
+
+/******           DATA   OPERATIONS                *******/
+ void _Cnst (void);     // CNST
+
+ void _LVal (void);     // @L
+ void _WVal (void);     // @W
+ void _BVal (void);     // @B
+ void _CLVal(void);     // C@L
+ void _CWVal(void);     // C@W
+ void _CBVal(void);     // C@B
+
+ void _TL  (void);      // !TL
+ void _TW  (void);      // !TW
+ void _TB  (void);      // !TB
+ void _TL_ (void);      // <!TL
+ void _TW_ (void);      // <!TW
+ void _TB_ (void);      // <!TB
+
+ void _ValBit(void);// @BI
+ void _StBit (void);// !BI
+ void _StBit1(void);// !BI1
+ void _StBit0(void);// !BI0
+
+ void _SetL(void);      // !!!ML
+ void _SetW(void);      // !!!MW
+ void _SetB(void);      // !!!MB
+ void _MoveL(void);     // !SL
+ void _MoveW(void);     // !SW
+ void _MoveB(void);     // !SB
+ void _SrchB(void);     // SRCHB
+ void isk(void);        // ISK
+
+/******       DATA  STRUCTURE OPERATIONS           *******/
+ void _GetDBAdr(void);  //  @DATA - Get Data Body Address
+ void _SetDBAdr(void);  //  !DATA - Set Data Body Address
+ void _GetTypeAdr(void);        //  @TYPE - Get Type Body Address
+ void _SetTypeAdr(void);        //  !TYPE - Set Type Body Address
+
+ void _GETADR(void);    //  GetAdr_Norm operation
+ void _GETADR_OWN(void);        //  GetAdr_OWN operation
+ void _GETADR_REL(void);        //  GetAdr_REL operation
+ // void GetDataAdr(void);      //  Get Address of Data (OLD)
+
+        /*-- Prefix Operations --*/
+ void _VARADROP(void);  //  ^
+ void _VARST (void);    //  !
+ void _VARADRD(void);   //  '
+ void _VARALLSET(void); //  !!!
+ void _VARST1 (void);   //  !1
+ void _VARST0 (void);   //  !0
+ void _VARADD (void);   //  !+
+ void _VARSUB (void);   //  !-
+ void _VARDIMQ(void);   //  DIM?
+ void _VARSIZEQ(void);  //  SIZE?
+ void _VARINC (void);   //  !1+
+ void _VARDEC (void);   //  !1-
+ void _VARCAPQ(void);   //  CAP?
+
+        /*-- A-Stack Data Operations --*/
+ void _VARDIMQs(void);  //  DIM?'
+ void _VARSIZEQs(void); //  SIZE?'
+
+ void _VarAdr(void);    // Var operation '
+
+        /*-- Long Var --*/
+ void _LVarDec(void);   // Long operation !1-
+ void _LVarInc(void);   // Long operation !1+
+ void _LVarSub(void);   // Long operation !-
+ void _LVarAdd(void);   // Long operation !+
+ void _LVarSt0(void);   // Long operation !0
+ void _LVarSt1(void);   // Long operation !1
+ void _LVarSt(void);    // Long operation !
+ void _LVarVal(void);   // Long operation on Name
+
+        /*-- Word Var --*/
+ void _WVarDec(void);   // Word operation !1-
+ void _WVarInc(void);   // Word operation !1+
+ void _WVarSub(void);   // Word operation !-
+ void _WVarAdd(void);   // Word operation !+
+ void _WVarSt0(void);   // Word operation !0
+ void _WVarSt1(void);   // Word operation !1
+ void _WVarSt(void);    // Word operation !
+ void _WVarVal(void);   // Word operation on Name
+
+        /*-- Byte Var --*/
+ void _BVarDec(void);   // Byte operation !1-
+ void _BVarInc(void);   // Byte operation !1+
+ void _BVarSub(void);   // Byte operation !-
+ void _BVarAdd(void);   // Byte operation !+
+ void _BVarSt0(void);   // Byte operation !0
+ void _BVarSt1(void);   // Byte operation !1
+ void _BVarSt(void);    // Byte operation !
+ void _BVarVal(void);   // Byte operation on Name
+
+        /*-- Act Var --*/
+ void _AVarVal(void);   // operation on Name (Execute)
+
+        /*-- Int Var --*/
+ void _IVarVal(void);
+
+        /*-- SByte Var --*/
+ void _SBVarVal(void);
+
+        /*-- Universal Vector --*/
+ void _VSizeQ(void);    // Size?
+ void _VDimQ(void);             // DIM?
+ void _VCapQ(void);             // CAP?
+ void _VctrDec(void);   // !1-
+ void _VctrInc(void);   // !1+
+ void _VctrSub(void);   // !-
+ void _VctrAdd(void);   // !+
+ void _VctrSt0(void);   // !0
+ void _VctrSt1(void);   // !1
+ void _VctrAdr(void);   // '
+ void _VctrAllSet(void); // !!!
+ void _VctrSt(void);    // !
+ void _VctrVal(void);   // on Name (@)
+
+        /*-- Universal Array --*/
+ void _ArrDec(void);    // !1-
+ void _ArrInc(void);    // !1+
+ void _ArrSub(void);    // !-
+ void _ArrAdd(void);    // !+
+ void _ArrSt0(void);    // !0
+ void _ArrSt1(void);    // !1
+ void _ArrAdr(void);    // '
+ void _ArrSt(void);     // !
+ void _ArrVal(void);    // on Name (@)
+
+        /*-- Universal Record (Structure) --*/
+ void _StructSt (void);  // !  !!!
+ void _StructSt0(void);  // !0
+ void _StructSize(void); // Size?  Cap?
+
+/*-- String Prefix operations--*/
+void _SByte(void);
+void _SRpl(void);
+void _SCmp(void);
+void _SAddB(void);
+void _SLen(void);
+void _SSsbi(void);
+void _SSsb(void);
+void _SIsb(void);
+void _SCut(void);
+void _SCap(void);
+void _SDel(void);
+void _SIns(void);
+void _SDsb(void);
+void _SAdd(void);
+void _SClr(void);
+void _SOvr(void);
+void _arg2str(void);
+void _dpfname(void);
+
+/*-- String var --*/
+
+void sSByte(void);
+void sSRpl(void);
+void sSCmp(void);
+void sSAddB(void);
+void sSLen(void);
+void sSSsbi(void);
+void sSSsb(void);
+void sSIsb(void);
+void sSCut(void);
+void sSCap(void);
+void sSDel(void);
+void sSIns(void);
+void sSDsb(void);
+void sSAdd(void);
+void sSClr(void);
+void sSOvr(void);
+void sStSets(void);
+void sStrAd(void);
+void sStSet(void);
+void sStVal(void);
+
+/*-- string description --*/
+
+void _TTIn(void);
+
+
+/*------- Input/Output  operations ----*/
+ void _Tobs (void);     //  "TOB'"
+ void _Trbs_0 (void);  //  "TRB'0"
+ void _Trbss_0(void);  //  "TRB''0"
+ void _Trbs_1 (void);  //  "TRB'1"
+ void _Trbss_1(void);  //  "TRB''1"
+
+ void _OS   (void);     //  "OS?"
+ void _WUp  (void);     //  "WUP"
+ void _WDown(void);     //  "WDOWN"
+ void _WAtr (void);     //  "WATR"
+ void _RAtr (void);     //  "RATR"
+ void _WAtrL(void);     //  "WATRLA"
+ void _RCP  (void);     //  "RCP"
+ void _SCP  (void);     //  "SCP"
+/*------- Input/Output file operations ----*/
+ void _FsFun_C  (void);         //      "FSFUN_C"
+ void _Clos_C   (void);         //      "CLOS_C"
+ void _Open_C   (void);         //      "OPEN_C"
+ void _LSeek_C  (void);         //      "LSEEK_C"
+ void _RdWr_C   (void);         //      "RDWR_C"
+ void _Crt0_C   (void);         //      "CRT0_C"
+ void _Crt_C    (void);         //      "CRT_C"
+ void _Crt_TMP_C (void);        //      "CRT_TMP_C"
+ void _Del_C    (void);         //      "Del_C"
+ void _Ren_C    (void);         //      "Ren_C"
+
+/*------- Directory operations ------------*/
+ void _GetDrv_C (void);         //      "GETDIR_C"
+ void _SetDrv_C (void);         //      "SETDIR_C"
+ void _ChDir_C  (void);         //      "CHDIR_C"
+ void _GetChDir_C (void);       //      "GETCHDIR_C"
+ void _FFF_C    (void);         //      "FFF_C"
+ void _FNF_C    (void);         //      "FNF_C"
+ void _CloseAll_C (void);       //      "CLOSEALL_C"
+
+ void PortB(void);  //  PORTB
+ void PortW(void);  //  PORT
+ void PortD(void);  //  PORTD
+ void sPortB(void); // !PORTB
+ void sPortW(void); // !PORT
+ void sPortD(void); // !PORTD
+
+/*------- Win32API operations ------------*/
+ void _Win32API (void);         //      "Win32API_"
+ void _WinFnExec (void);        //      "WinFnExec"   // ─юяюыэхэшх
+ void _FormWndProc(void);       //      "_FORMWNDPROC"
+ void _RealADR  (void);         //      "REALADR"
+ void _DsspADR  (void);         //      "DSSPADR"
+
+
+void TAL(void); // !TAL
+void TAW(void); // !TAW
+void TAB(void); // !TAB
+void aAB(void); // @AB
+void aAW(void); // @AW
+void aAL(void); // @AL
+void mallocD(void);  // MALLOC
+void reallocD(void); // REALLOC
+void freeD(void);    // FREE
+void nullptr(void);  // NULL
+void _Real(void); //DFADR DSSP Address -> Fisical Address
+void _DsspA(void); //FDADR Fisical Address -> DSSP Address
+
+void _interr(void); // INTERR
+
+ void _DsspADR  (void);         //      "DSSPADR"
+
+ void _ExecDSSP(void);  // "EXECDSSP"  ( for testing ExecDpfCode ) !!!
+
+
+/*--------    Debug  operations    ----*/
+ void _G11 (void);              //  "\G11"
+ void _Restart(void);   //  "RESTART"
+
+/*--- Coroutine (Context) operations ---*/
+ void _Transfer (void);      //  TRANSFER
+ void _NewContext(void);     // NEWCONTEXT
+ void _MainContext(void);    // MAINCONTEXT
+ void _ForceContext(void);   // FORCECONTEXT
+
+/*--- Interrupt Mehanism operations ---*/
+ void _RaiseIntrpt(void);        // INTR
+ void _GetIntVect (void);        // GetIntVect
+ void _SetIntVect (void);        // SetIntVect
+ void _RestoreIntVect (void);// RestoreIntVect
+ void _ION (void);              // ION
+ void _IOFF(void);              // IOFF
+ void _IRESET(void);    // IRESET
+ void _IntrON (void);   // xINTRON
+ void _IntrOFF(void);   // xINTROFF
+
+/******          Dialog  OPERATIONS                *******/
+ void _PrT (void);      // .
+ void _PrTx(void);      // .X
+ void _PrS (void);      // .S
+ void _PrSx(void);      // .SX
+ void _PrTOS(void);     // .TOS
+ void _TIS(void);       // .TIS
+
+ /*----------- DSSP OPERATIONS with SLOVAR ---------*/
+ void _GetWord (void);  // GETWORD
+ void _FindWord (void); // FINDWORD
+ void _PutWord (void);  // PUTWORD
+ void _UnWord (void);   // UNWORD
+ void _AdrWord(void);   // ''WORD
+
+#ifdef  TEST_VERS
+
+/******           TEST   OPERATIONS                *******/
+ void _N (void);        // " : "
+ void _E (void);        // " ; "
+ void _A0 (void);       // " A0, "
+ void _A1 (void);       // " A1, "
+ void _A2 (void);       // " A2, "
+ void _A3 (void);       // " A3, "
+ void _A4 (void);       // " A4, "
+ void _A5 (void);       // " A5, "
+ void _A6 (void);       // " A6, "
+
+ void _TestAdr (void);  // "TESTADR"
+
+ void _TestExecWndProc(void); // "TestExecWndProc"
+ void _TestWin32API     (void); //      "TestWin32API"
+
+#endif
+
+// void _ExecDSSP(void);        // "EXECDSSP"  ( for testing ExecDpfCode ) !!!
+
+ void _X(void);         // "X"
+
+
+/*********************************************************/
+/******     FUNCTION NUMBERs of DSSP-OPERATIONS    *******/
+/*********************************************************/
+
+#ifndef Watcom
+#define fn_NO   (FNum)((cmnd)(-1))    // special number as marker
+#endif
+
+        // fn_NO means not to put value in Command memory
+typedef enum _FNum {
+
+        /*--- MAIN Interpretation operations ----*/
+        fn_Halt,        //      "HALT"
+        fn_Int,         //      INTELO
+        fn_K   ,        //      ";"
+        fn_Nop ,        //      "NOP"
+        fn_Call,        //  "CALLCODE"
+        fn_VARNAME,     //      VARTELO
+        fn_CnstBody, // "CNSTCODE"
+        fn_TxtCnst,  // "TXTCODE"
+        fn_PTxtCnst, // "PTXTCODE"
+        fn_UnOp ,       //      "Unimplemented Operation"
+        fn_UndefOp,     //      "Undefined Operation"
+
+        /*---     Control operations ----*/
+        fn_Exec,        //      "EXEC"
+        fn_If0,         //      "IF0"
+        fn_IfMi,        //      "IF-"
+        fn_IfPl,        //      "IF+"
+        fn_Br0,         //      "BR0"
+        fn_BrMi,        //      "BR-"
+        fn_BrPl,        //      "BR+"
+        fn_BrS ,        //      "BRS"
+        fn_Br  ,        //      "BR"
+        fn_Else,        //      "ELSE"
+        fn_Br1,         //      ""
+        fn_DW,          //      "DW"
+        fn_Loop,        //      "LOOP"
+        fn_DOFor,       //      "DO-"
+
+        fn_GetPC,       //      "CPC"
+        fn_SetPC,       //      "!PC"
+        fn_GetR,        //      "@R"
+        fn_SetR,        //      "!R"
+        fn_GetAdr,      //      "''"
+        fn_GTP ,        //      "GTP"
+
+        /*---   LOOPs with TRAPs ( RP DO EX ) ---*/
+        fn_Rp,          //  "RP"
+        fn_Do,          //  "DO"
+        fn_Rp1,         //  "RP1"
+        fn_Do1,         //  "DO1"
+        fn_Ex,          //  "EX"
+        fn_Ex0,         //  "EX0"
+        fn_ExMi,        //  "EX-"
+        fn_ExPl,        //  "EX+"
+
+        /*---- Recovering of Variables (LVOST)  ---*/
+        fn_LVost,    // ""
+        fn_LVosts,   // ""
+
+        /*--- Mechanism of Exception Handling ---*/
+        fn_RtL,     //  ""
+        fn_RtLs,   //   ""
+        fn_NOn,     //  "ON"
+        fn_EOn,     //  "EON"
+        fn_ROn,     //  "RON"
+        fn_NtfOn,   //  "_ON"
+        fn_EscOn,   //  "_EON"
+        fn_RtrOn,   //  "_RON"
+
+        fn_RaiseD,  //  "RAISE_"
+        fn_RaiseSt, //  "_RAISE"
+        fn_ReRaise, //  "RERAISE"
+
+        /*---     Common A-stack operations ----*/
+        fn_Cnst0,       //      "0"
+        fn_Cnst1,       //      "1"
+        fn_Cnst2,       //      "2"
+        fn_Cnst4,       //      "4"
+
+        fn_C  ,         //      "C"
+        fn_C2  ,        //      "C2"
+        fn_C3  ,        //      "C3"
+        fn_C4  ,        //      "C4"
+        fn_CT  ,        //      "CT"
+
+        fn_E2  ,        //      "E2"
+        fn_E3  ,        //      "E3"
+        fn_E4  ,        //      "E4"
+        fn_ET  ,        //      "ET"
+
+        fn_D  ,         //      "D"
+        fn_D2 ,         //      "DD"
+        fn_D3 ,         //      "DDD"
+        fn_D4 ,         //      "DDDD"
+        fn_E2D ,        //      "E2D"
+
+        fn_DS ,         //      "DS"
+        fn_Deep,        //      "DEEP"
+
+        /*---     Arithmetic stack operations ----*/
+        fn_TN1,         //      "T-1"
+        fn_T0 ,         //      "T0"
+        fn_T1 ,         //      "T1"
+        fn_T2 ,         //      "T2"
+        fn_T4 ,         //      "T4"
+
+        fn_Add ,        //      "+"
+        fn_Add1 ,       //      "1+"
+        fn_Add2 ,       //      "2+"
+        fn_Add3 ,       //      "3+"
+        fn_Add4 ,       //      "4+"
+
+        fn_Sub ,        //      "-"
+        fn_Sub1 ,       //      "1-"
+        fn_Sub2 ,       //      "2-"
+        fn_Sub3 ,       //      "3-"
+        fn_Sub4 ,       //      "4-"
+
+        fn_Neg  ,       //      "NEG"
+        fn_Abs  ,       //      "ABS"
+        fn_Sgn  ,       //      "SGN"
+        fn_Min  ,       //      "MIN"
+        fn_Max  ,       //      "MAX"
+
+        fn_Mult ,       //      "*"
+        fn_Div  ,       //      "/"
+
+        /*---     Logical and Bit operations ----*/
+        fn_Lt  ,        //      "<"
+        fn_LE  ,        //      "<="
+        fn_Eq  ,        //      "="
+        fn_Gt  ,        //      ">"
+        fn_GE  ,        //      ">="
+        fn_Seg  ,       //      "SEG"
+
+        fn_Not  ,       //      "NOT"
+        fn_Inv  ,       //      "INV"
+        fn_And  ,       //      "&"
+        fn_Or   ,       //      "&0"
+        fn_Xor  ,       //      "'+'"
+
+        fn_Shl  ,       //      "SHL"
+        fn_Shr  ,       //      "SHR"
+        fn_Sht  ,       //      "SHT"
+
+        fn_SwB  ,       //      "SWB"
+        fn_SwW  ,       //      "SWW"
+        fn_Lo  ,        //      "LO"
+        fn_Hi  ,        //      "HI"
+        fn_SetLo,       //      "SETLO"
+        fn_SetHi,       //      "SETHI"
+        fn_SgX,         //      "SGX"
+
+        /*--- Data operations ---*/
+        fn_Cnst,        //      "Cnst"
+
+        fn_LVal,        //      "@L"
+        fn_WVal,        //      "@W"
+        fn_BVal,        //      "@B"
+        fn_CLVal,       //      "C@L"
+        fn_CWVal,       //      "C@W"
+        fn_CBVal,       //      "C@B"
+
+        fn_TL ,         //      "!TL"
+        fn_TW ,         //      "!TW"
+        fn_TB ,         //      "!TB"
+        fn_TL_,         //      "<!TL"
+        fn_TW_,         //      "<!TW"
+        fn_TB_,         //      "<!TB"
+
+        fn_ValBit,      //      "@BI"
+        fn_StBit,       //      "!BI"
+        fn_StBit1,      //      "!BI1"
+        fn_StBit0,      //      "!BI0"
+
+        fn_SetL,        //      "!!!ML"
+        fn_SetW,        //      "!!!MW"
+        fn_SetB,        //      "!!!MB"
+        fn_MoveL,       //      "!SL"
+        fn_MoveW,       //      "!SW"
+        fn_MoveB,       //      "!SB"
+        fn_SrchB,       //      "SRCHB"
+        fn_Isk,         //      "ISK"
+
+/*--- Data structure operations ---*/
+        fn_GetDBAdr,    //  @DATA - Get Data Body Address
+        fn_SetDBAdr,    //  !DATA - Set Data Body Address
+        fn_GetTypeAdr,//  @TYPE - Get Type Body Address
+        fn_SetTypeAdr,//  @TYPE - Set Type Body Address
+
+        /*-- Get Adr Operations --*/
+        fn_GETADR,      //  GetAdr_Norm operation
+        fn_GETADR_OWN,  //  GetAdr_OWN operation
+        fn_GETADR_REL,  //  GetAdr_REL operation
+
+        /*-- Prefix Data Operations --*/
+        fn_VARST,       //      "!"
+        fn_VARADR,      //      "'"
+        fn_VARALLSET,   //      "!!!"
+        fn_VARST1,      //      "!1"
+        fn_VARST0,      //      "!0"
+        fn_VARADD,      //      "!+"
+        fn_VARSUB,      //      "!-"
+        fn_VARDIMQ,     //      "DIM?"
+        fn_VARSIZEQ,    //      "SIZE?"
+        fn_VARINC,      //      "!1+"
+        fn_VARDEC,      //      "!1-"
+        fn_VARCAPQ,     //      "CAP?"
+
+        /*-- A-Stack Data Operations --*/
+        fn_VARDIMQs,    //      "DIM?'"
+        fn_VARSIZEQs,   //      "SIZE?'"
+
+        fn_VarAdr,      // Var operation '
+
+        /*-- Long Var --*/
+        fn_LVarDec,     // Long operation !1-
+        fn_LVarInc,     // Long operation !1+
+        fn_LVarSub,     // Long operation !-
+        fn_LVarAdd,     // Long operation !+
+        fn_LVarSt0,     // Long operation !0
+        fn_LVarSt1,     // Long operation !1
+        fn_LVarSt,      // Long operation !
+        fn_LVarVal,     // Long operation on Name
+
+        /*-- Word Var --*/
+        fn_WVarDec,     // Word operation !1-
+        fn_WVarInc,     // Word operation !1+
+        fn_WVarSub,     // Word operation !-
+        fn_WVarAdd,     // Word operation !+
+        fn_WVarSt0,     // Word operation !0
+        fn_WVarSt1,     // Word operation !1
+        fn_WVarSt,      // Word operation !
+        fn_WVarVal,     // Word operation on Name
+
+        /*-- Byte Var --*/
+        fn_BVarDec,     // Byte operation !1-
+        fn_BVarInc,     // Byte operation !1+
+        fn_BVarSub,     // Byte operation !-
+        fn_BVarAdd,     // Byte operation !+
+        fn_BVarSt0,     // Byte operation !0
+        fn_BVarSt1,     // Byte operation !1
+        fn_BVarSt,      // Byte operation !
+        fn_BVarVal,     // Byte operation on Name
+
+        /*-- Act Var --*/
+        fn_AVarVal,     // operation on Name (Execute)
+
+        /*-- Int Var --*/
+        fn_IVarVal,
+
+        /*-- SByte Var --*/
+        fn_SBVarVal,
+
+        /*-- Universal Vector --*/
+        fn_VSizeQ,              // SIZE?
+        fn_VDimQ,               // DIM?
+        fn_VCapQ,               // CAP?
+        fn_VctrDec,     // !1-
+        fn_VctrInc,     // !1+
+        fn_VctrSub,     // !-
+        fn_VctrAdd,     // !+
+        fn_VctrSt0,     // !0
+        fn_VctrSt1,     // !1
+        fn_VctrAdr ,    // '
+        fn_VctrAllSet,  // !!!
+        fn_VctrSt ,     // !
+        fn_VctrVal,     // on Name (@)
+
+        /*-- Universal Array --*/
+        fn_ArrDec,      // !1-
+        fn_ArrInc,      // !1+
+        fn_ArrSub,      // !-
+        fn_ArrAdd,      // !+
+        fn_ArrSt0,      // !0
+        fn_ArrSt1,      // !1
+        fn_ArrAdr ,     // '
+        fn_ArrSt ,      // !
+        fn_ArrVal,      // on Name (@)
+
+        /*-- Universal Record (Structure) --*/
+        fn_StructSt,   // !
+        fn_StructSt0,  // !0
+        fn_StructSize, // Size?   Cap?
+
+    /*-- string prefix operations --*/
+        fn_SByte,       // "SBYTE"
+        fn_SRpl,        // "SRPL"
+        fn_SCmp,        // "SCMP"
+        fn_SAddB,       // "SADDB"
+        fn_SLen,        // "SLEN"
+        fn_SSsbi,       // "SLEN"
+        fn_SSsb,        // "SSSB"
+        fn_SIsb,        // "SISB"
+        fn_SCut,        // "SCUT"
+        fn_SCap,        // "SCAP?"
+        fn_SDel,        // "SDEL"
+        fn_SIns,        // "SINS"
+        fn_SDsb,        // "SDSB"
+        fn_SAdd,        // "SADD"
+        fn_SClr,        // "SCLR"
+        fn_SOvr,        // "SOVR"
+
+    /*-- string var--*/
+        fn_sSByte,
+        fn_sSRpl,
+        fn_sSCmp,
+        fn_sSAddB,
+        fn_sSLen,
+        fn_sSSsbi,
+        fn_sSSsb,
+        fn_sSIsb,
+        fn_sSCut,
+        fn_sSCap,
+        fn_sSDel,
+        fn_sSIns,
+        fn_sSDsb,
+        fn_sSAdd,
+        fn_sSClr,
+        fn_sSOvr,
+        fn_sStSets,
+        fn_sStrAd,
+        fn_sStSet,
+        fn_sStVal,
+
+/* some operations, concerning strings  */
+    fn_arg2str, // "ARG2STR"
+    fn_dpfname, // "dpfNAME"
+    fn_ttin,    // "TTIN"
+
+
+    /*----- Input/Output console operations ----*/
+        fn_Tobs,        //      "TOB'"
+        fn_Trbs_0 ,     //      "TRB'0"
+        fn_Trbss_0,     //      "TRB''0"
+        fn_Trbs_1 ,     //      "TRB'1"
+        fn_Trbss_1,     //      "TRB''1"
+
+        fn_OS,          //      "OS?"
+        fn_WUp,         //      "WUP"
+        fn_WDown,       //      "WDOWN"
+        fn_WAtr,        //      "WATR"
+        fn_RAtr,        //      "RATR"
+        fn_WAtrL,       //      "WATRL"
+        fn_RCP,         //      "RCP"
+        fn_SCP,         //      "SCP"
+    /*----- Input/Output file operations ----*/
+        fn_FSFUN_C,     //      "FSFUN_C"
+        fn_CLOS_C,      //      "CLOS_C"
+        fn_OPEN_C,      //      "OPEN_C"
+        fn_LSEEK_C,     //      "LSEEK_C"
+        fn_RDWR_C,      //      "RDWR_C"
+        fn_CRT0_C,      //      "CRT0_C"
+        fn_CRT_C,       //      "CRT_C"
+        fn_CRT_TMP_C,   //      "CRT_TMP_C"
+        fn_REN_C,       //      "REN_C"
+        fn_DEL_C,       //      "DEL_C"
+    /*----- Directory operations ----*/
+
+        fn_SETDRV_C,    //      "SETDRV_C"
+        fn_CHDIR_C,     //      "CHDIR_C"
+        fn_GETDRV_C,    //      "GETDRV_C"
+        fn_GETCHDIR_C,  //      "GETCHDIR_C"
+        fn_FFF_C,       //      "FFF_C"
+        fn_FNF_C,       //      "FNF_C"
+        fn_CLOSEALL_C,  //      "CLOSEALL_C"
+
+        fn_PORTB,               //  PORTB
+        fn_PORTW,               //  PORT
+        fn_PORTD,               //  PORTD
+        fn_sPORTB,              // !PORTB
+        fn_sPORTW,              // !PORT
+        fn_sPORTD,              // !PORTD
+
+
+        /*------- Win32API operations ------------*/
+        fn_Win32API,    //      "Win32API_"
+        fn_WinFnExec,   //  "WinFnExec"  //  ─юяюыэхэшх
+        fn_FormWndProc, //      "_FORMWNDPROC"
+        fn_RealADR,             //      "REALADR"
+        fn_DsspADR,             //      "DSSPADR"
+
+
+        fn_TAL,                 // !TAL
+        fn_TAW,                 // !TAW
+        fn_TAB,                 // !TAB
+        fn_aAB,                 // @AB
+        fn_aAW,                 // @AW
+        fn_aAL,                 // @AL
+        fn_mallocD,             // MALLOC
+        fn_reallocD,            // REALLOC
+        fn_freeD,               // FREE
+        fn_NULL,                // NULL
+        fn_DFADR,               // DFADR
+        fn_FDADR,               // FDADR
+
+        fn_interr,              // INTERR
+        fn_ExecDSSP,            // "EXECDSSP"
+
+    /*----    Debug  operations ---*/
+        fn_G11,         //      "\G11"
+        fn_Restart,     //      "RESTART"
+
+/*--- Coroutine (Context) operations ---*/
+        fn_Transfer,            // TRANSFER
+        fn_NewContext,          // NEWCONTEXT
+        fn_MainContext,         // MAINCONTEXT
+        fn_ForceContext,        // FORCECONTEXT
+
+/*--- Interrupt Mehanism operations ---*/
+    fn_RaiseIntrpt,             // INTR
+    fn_GetIntVect ,             // GetIntVect
+    fn_SetIntVect ,             // SetIntVect
+    fn_RestoreIntVect,  // RestoreIntVect
+        fn_ION ,                // ION
+        fn_IOFF ,               // IOFF
+        fn_IRESET,              // IRESET
+        fn_IntrON,              // xINTRON
+        fn_IntrOFF,             // xINTROFF
+
+    /*----  Dialog  OPERATIONS    ----*/
+        fn_PrT,         //      "."
+        fn_PrTx,        //      ".X"
+        fn_PrS,         //      ".S"
+        fn_PrSx,        //      ".SX"
+        fn_PrTOS,       // .TOS
+        fn_TIS,         // .TIS
+
+        /*--- Slovar operations ---*/
+        fn_FindWord ,   //      "FINDWORD"
+        fn_GetWord  ,   //      "GETWORD"
+        fn_PutWord  ,   //      "PUTWORD"
+        fn_UnWord   ,   //      "UNWORD"
+        fn_AdrWord  ,   //      "''WORD"
+
+#ifdef  TEST_VERS
+
+        /*--- Test operations ---*/
+        fn_A0 ,         //      "A0"
+        fn_A1 ,         //      "A1"
+        fn_A2 ,         //      "A2"
+        fn_A3 ,         //      "A3"
+        fn_A4 ,         //      "A4"
+        fn_A5 ,         //      "A5"
+        fn_A6 ,         //      "A6"
+        fn_N,           //      "N"
+        fn_E,           //      "E"
+        fn_TestAdr,     //      "TESTADR"
+        fn_TestExecWndProc, // "TestExecWndProc"
+        fn_TestWin32API,        //      "TestWin32API"
+#endif
+
+        fn_MAX,         //  maximum number of function
+#ifdef Watcom
+        fn_NO,
+#endif
+} FNum ;
+
+/*********************************************************/
+/******     FUNCTIONs TABLE  of DSSP-OPERATIONS    *******/
+/*********************************************************/
+
+fptr    FTABLE [ (int32) fn_MAX ] = {
+
+        /*--- MAIN Interpretation operations ----*/
+        _Halt,                  //      "HALT"
+        _Int,                   //      INTELO
+        _K,             //      ";"
+        _Nop,           //      "NOP"
+        _Call,          //      "CALLTELO"
+        _VARNAME,       //      VARTELO
+        _CnstBody,              // "CNSTCODE"
+        _TxtCnst,               // "TXTCODE"
+        _PTxtCnst,              // "PTXTCODE"
+        _UnOp,          //      "Unimplemented"
+        _UndefOp,       //      "Undefined"
+
+        /*---     Control operations ----*/
+        _Exec,          //      "EXEC"
+        _If0,           //      "IF0"
+        _IfMi,          //      "IF-"
+        _IfPl,          //      "IF+"
+        _Br0,           //      "BR0"
+        _BrMi,          //      "BR-"
+        _BrPl,          //      "BR+"
+        _BrS,           //      "BRS"
+        _Br,            //      "BR"
+        _Else,          //      "ELSE"
+        _Br1,           //      ""
+        _DW,            //      "DW"
+        _Loop  ,                //      "LOOP"
+        _DOFor,                 //      "DO-"
+
+        _GetPC ,        //      "CPC"
+        _SetPC ,        //      "!PC"
+        _GetR  ,        //      "@R"
+        _SetR  ,        //      "!R"
+        _GetAdrD,        //     "''"
+        _GTP   ,                //      "GTP"
+
+        /*---   LOOPs with TRAPs ( RP DO EX ) ---*/
+        _Rp,                    //  "RP"
+        _Do,                    //  "DO"
+        _Rp1,                   //  "RP1"
+        _Do1,                   //  "DO1"
+        _Ex,                    //  "EX"
+        _Ex0,                   //  "EX0"
+        _ExMi,                  //  "EX-"
+        _ExPl,                  //  "EX+"
+
+        /*---- Recovering of Variables (LVOST)  ---*/
+        _LVost,    //   ""
+        _LVosts,   //   ""
+
+        /*--- Mechanism of Exception Handling ---*/
+        _RtL,           //      ""
+        _RtLs,         //       ""
+        _NOn,           //      "ON"
+        _EOn,           //      "EON"
+        _ROn,           //      "RON"
+        _NtfOn,         //      "_ON"
+        _EscOn,         //      "_EON"
+        _RtrOn,         //      "_RON"
+
+        _RaiseD,                //      "RAISE_"
+        _RaiseSt,               //      "_RAISE"
+        _ReRaise,               //      "RERAISE"
+
+        /*---     Common A-stack operations ----*/
+        _Cnst0,         //      "0"
+        _Cnst1,         //      "1"
+        _Cnst2,         //      "2"
+        _Cnst4,         //      "4"
+
+        _C,             //      "C"
+        _C2,            //      "C2"
+        _C3,            //      "C3"
+        _C4,            //      "C4"
+        _CT,            //      "CT"
+
+        _E2,            //      "E2"
+        _E3,            //      "E3"
+        _E4,            //      "E4"
+        _ET,            //      "ET"
+
+        _D,             //      "D"
+        _D2,            //      "DD"
+        _D3,            //      "DDD"
+        _D4,            //      "DDDD"
+        _E2D,           //      "E2D"
+
+        _DS,            //      "DS"
+        _Deep,          //      "DEEP"
+
+        /*---     Arithmetic stack operations ----*/
+        _TN1,           //      "T-1"
+        _T0,            //      "T0"
+        _T1,            //      "T1"
+        _T2,            //      "T2"
+        _T4,            //      "T4"
+
+        _Add,           //      "+"
+        _Add1,          //      "1+"
+        _Add2,          //      "2+"
+        _Add3,          //      "3+"
+        _Add4,          //      "4+"
+
+        _Sub,           //      "-"
+        _Sub1,          //      "1-"
+        _Sub2,          //      "2-"
+        _Sub3,          //      "3-"
+        _Sub4,          //      "4-"
+
+        _Neg ,          //      "NEG"
+        _Abs ,          //      "ABS"
+        _Sgn ,          //      "SGN"
+        _Min ,          //      "MIN"
+        _Max ,          //      "MAX"
+
+        _Mult,          //      "*"
+        _Div ,          //      "/"
+
+        /*---     Logical and Bit operations ----*/
+        _Lt ,           //      "<"
+        _LE ,           //      "<="
+        _Eq ,           //      "="
+        _Gt ,           //      ">"
+        _GE ,           //      ">="
+        _Seg ,          //      "SEG"
+
+        _Not ,          //      "NOT"
+        _Inv ,          //      "INV"
+        _And ,          //      "&"
+        _Or  ,          //      "&0"
+        _Xor ,          //      "'+'"
+
+        _Shl ,          //      "SHL"
+        _Shr ,          //      "SHR"
+        _Sht ,          //      "SHT"
+
+        _SwB ,          //      "SWB"
+        _SwW ,          //      "SWW"
+        _Lo ,           //      "LO"
+        _Hi ,           //      "HI"
+        _SetLo,         //      "SETLO"
+        _SetHi,         //      "SETHI"
+        _SgX,           //      "SGX"
+
+        /*--- Data operations ---*/
+        _Cnst,          //      "Cnst"
+
+        _LVal,          //      "@L"
+        _WVal,          //      "@W"
+        _BVal,          //      "@B"
+        _CLVal,         //      "C@L"
+        _CWVal,         //      "C@W"
+        _CBVal,         //      "C@B"
+
+        _TL,            //      "!TL"
+        _TW,            //      "!TW"
+        _TB,            //      "!TB"
+        _TL_,           //      "<!TL"
+        _TW_,           //      "<!TW"
+        _TB_,           //      "<!TB"
+
+        _ValBit,        //      "@BI"
+        _StBit ,        //      "!BI"
+        _StBit1,        //      "!BI1"
+        _StBit0,        //      "!BI0"
+
+        _SetL,          //      "!!!ML"
+        _SetW,          //      "!!!MW"
+        _SetB,          //      "!!!MB"
+        _MoveL,         //      "!SL"
+        _MoveW,         //      "!SW"
+        _MoveB,         //      "!SB"
+        _SrchB,         //      "SRCHB"
+        isk,    //      "ISK"
+
+        /*--- Data structure operations ---*/
+        _GetDBAdr,      //  @DATA - Get Data Body Address
+        _SetDBAdr,      //  !DATA - Set Data Body Address
+        _GetTypeAdr,//  @TYPE - Get Type Body Address
+        _SetTypeAdr,//  !TYPE - Set Type Body Address
+
+        _GETADR,        //  GetAdr_Norm operation
+        _GETADR_OWN,    //  GetAdr_OWN operation
+        _GETADR_REL,    //  GetAdr_REL operation
+
+        /*-- Prefix Operation --*/
+        _VARST,         //      "!"
+        _VARADRD,       //      "'"
+        _VARALLSET,     //      "!!!"
+        _VARST1,        //      "!1"
+        _VARST0,        //      "!0"
+        _VARADD,        //      "!+"
+        _VARSUB,        //      "!-"
+        _VARDIMQ,       //      "DIM?"
+        _VARSIZEQ,      //      "SIZE?"
+        _VARINC,        //      "!1+"
+        _VARDEC,        //      "!1-"
+        _VARCAPQ,       //      "CAP?"
+
+        /*-- A-Stack Data Operations --*/
+        _VARDIMQs,      //      "DIM?'"
+        _VARSIZEQs,     //      "SIZE?'"
+
+        _VarAdr,        // operation '
+
+        /*-- Long Var --*/
+        _LVarDec,       // Long operation !1-
+        _LVarInc,       // Long operation !1+
+        _LVarSub,       // Long operation !-
+        _LVarAdd,       // Long operation !+
+        _LVarSt0,       // Long operation !0
+        _LVarSt1,       // Long operation !1
+        _LVarSt,        // Long operation !
+        _LVarVal,       // Long operation on Name
+
+        /*-- Word Var --*/
+        _WVarDec,       // Word operation !1-
+        _WVarInc,       // Word operation !1+
+        _WVarSub,       // Word operation !-
+        _WVarAdd,       // Word operation !+
+        _WVarSt0,       // Word operation !0
+        _WVarSt1,       // Word operation !1
+        _WVarSt,        // Word operation !
+        _WVarVal,       // Word operation on Name
+
+        /*-- Byte Var --*/
+        _BVarDec,       // Byte operation !1-
+        _BVarInc,       // Byte operation !1+
+        _BVarSub,       // Byte operation !-
+        _BVarAdd,       // Byte operation !+
+        _BVarSt0,       // Byte operation !0
+        _BVarSt1,       // Byte operation !1
+        _BVarSt,        // Byte operation !
+        _BVarVal,       // Byte operation on Name
+
+        /*-- Act Var --*/
+        _AVarVal,       // operation on Name (Execute)
+
+        /*-- Int Var --*/
+        _IVarVal,
+
+        /*-- SByte Var --*/
+        _SBVarVal,
+
+        /*-- Universal Vector --*/
+        _VSizeQ,        // SIZE?
+        _VDimQ,         // DIM?
+        _VCapQ,         // CAP?
+        _VctrDec,       // !1-
+        _VctrInc,       // !1+
+        _VctrSub,       // !-
+        _VctrAdd,       // !+
+        _VctrSt0,       // !0
+        _VctrSt1,       // !1
+        _VctrAdr ,      // '
+        _VctrAllSet,// !!!
+        _VctrSt ,       // !
+        _VctrVal,       // on Name (@)
+
+        /*-- Universal Array --*/
+        _ArrDec,        // !1-
+        _ArrInc,        // !1+
+        _ArrSub,        // !-
+        _ArrAdd,        // !+
+        _ArrSt0,        // !0
+        _ArrSt1,        // !1
+        _ArrAdr ,       // '
+        _ArrSt ,        // !
+        _ArrVal,        // on Name (@)
+
+        /*-- Universal Record (Structure) --*/
+        _StructSt,   // !   !!!
+        _StructSt0,      // !0
+        _StructSize, // Size?   Cap?
+
+/*-- String prefix operations --*/
+        _SByte,
+        _SRpl,
+        _SCmp,
+        _SAddB,
+        _SLen,
+        _SSsbi,
+        _SSsb,
+        _SIsb,
+        _SCut,
+        _SCap,
+        _SDel,
+        _SIns,
+        _SDsb,
+        _SAdd,
+        _SClr,
+        _SOvr,
+
+/*-- String Var --*/
+        sSByte,
+        sSRpl,
+        sSCmp,
+        sSAddB,
+        sSLen,
+        sSSsbi,
+        sSSsb,
+        sSIsb,
+        sSCut,
+        sSCap,
+        sSDel,
+        sSIns,
+        sSDsb,
+        sSAdd,
+        sSClr,
+        sSOvr,
+        sStSets,
+        sStrAd,
+        sStSet,
+        sStVal,
+
+/* some operations, concerning strings  */
+    _arg2str,
+    _dpfname,
+    _TTIn,
+
+/*------- Input/Output console operations ----*/
+        _Tobs,          //      "TOB'"
+        _Trbs_0,        //      "TRB'0"
+        _Trbss_0,       //      "TRB''0"
+        _Trbs_1,        //      "TRB'1"
+        _Trbss_1,       //      "TRB''1"
+
+        _OS,            //      "OS?"
+        _WUp,           //      "WUP"
+        _WDown,         //      "WDOWN"
+        _WAtr,          //      "WATR"
+        _RAtr,          //      "RATR"
+        _WAtrL,         //      "WATRLA"
+        _RCP,           //      "RCP"
+        _SCP,           //      "SCP"
+/*------- Input/Output file operations ----*/
+        _FsFun_C,       //      "FSFUN_C"
+        _Clos_C,        //      "CLOS_C"
+        _Open_C,        //      "OPEN_C"
+        _LSeek_C,       //      "LSEEK_C"
+        _RdWr_C,        //      "RDWR_C"
+        _Crt0_C,        //      "CRT0_C"
+        _Crt_C,         //      "CRT_C"
+        _Crt_TMP_C, //  "CRT_TMP_C"
+        _Ren_C,         //      "Ren_C"
+        _Del_C,         //      "Del_C"
+
+/*------- Directory operations ------------*/
+        _SetDrv_C,      //      "SETDIR_C"
+        _ChDir_C,       //      "CHDIR_C"
+        _GetDrv_C,      //      "GETDIR_C"
+        _GetChDir_C,//  "GETCHDIR_C"
+        _FFF_C,         //      "FFF_C"
+        _FNF_C,         //      "FNF_C"
+        _CloseAll_C,//  "CLOSEALL_C"
+
+
+        PortB,          //  PORTB
+        PortW,          //  PORT
+        PortD,          //  PORTD
+        sPortB,         // !PORTB
+        sPortW,         // !PORT
+        sPortD,         // !PORTD
+
+/*------- Win32API operations ------------*/
+        _Win32API,              //      "Win32API_"
+        _WinFnExec,             // WinFnExec
+        _FormWndProc,           //      "_FORMWNDPROC"
+        _RealADR,               //      "REALADR"
+        _DsspADR,               //      "DSSPADR"
+
+        TAL,                    // !TAL
+        TAW,                    // !TAW
+        TAB,                    // !TAB
+        aAB,                    // @AB
+        aAW,                    // @AW
+        aAL,                    // @AL
+        mallocD,                // MALLOC
+        reallocD,               // REALLOC
+        freeD,                  // FREE
+        nullptr,                // NULL
+        _Real,                  // DFADR DSSP Address -> Fisical Address
+        _DsspA,                 // FDADR Fisical Address -> DSSP Address
+        _interr,                // INTERR
+        _ExecDSSP,              //  "EXECDSSP"
+
+/*--------    Debug  operations    ----*/
+        _G11,           //      "\G11"
+        _Restart,       //      "RESTART"
+
+/*--- Coroutine (Context) operations ---*/
+        _Transfer,      // TRANSFER
+        _NewContext,    // NEWCONTEXT
+        _MainContext,   // MAINCONTEXT
+        _ForceContext,  // FORCECONTEXT
+
+/*--- Interrupt Mehanism operations ---*/
+    _RaiseIntrpt,       // INTR
+    _GetIntVect ,       // GetIntVect
+    _SetIntVect ,       // SetIntVect
+    _RestoreIntVect,// RestoreIntVect
+        _ION  ,                 // ION
+        _IOFF ,                 // IOFF
+        _IRESET,                // IRESET
+        _IntrON,                // xINTRON
+        _IntrOFF,               // xINTROFF
+
+/*----  Dialog  OPERATIONS    ----*/
+        _PrT,           //      "."
+        _PrTx,          //      ".X"
+        _PrS,           //      ".S"
+        _PrSx,          //      ".SX"
+        _PrTOS,         // .TOS
+        _TIS,           // .TIS
+
+        /*--- Slovar operations ---*/
+        _FindWord,      //      "FINDWORD"
+        _GetWord ,      //      "GETWORD"
+        _PutWord,       //      "PUTWORD"
+        _UnWord,        //      "UNWORD"
+        _AdrWord,       //      "''WORD"
+
+#ifdef  TEST_VERS
+
+        /*--- Test operations ---*/
+        _A0,            //      "A0"
+        _A1,            //      "A1"
+        _A2,            //      "A2"
+        _A3,            //      "A3"
+        _A4,            //      "A4"
+        _A5,            //      "A5"
+        _A6,            //      "A6"
+        _N,             //      "N"
+        _E,             //      "E"
+        _TestAdr,       //      "TESTADR"
+        _TestExecWndProc, // "TestExecWndProc"
+
+        _TestWin32API,  //      "TestWin32API"
+
+
+#endif
+
+}; // FTABLE
